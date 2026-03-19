@@ -1,0 +1,471 @@
+/* 1. Global Setup & Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+/* 2. HOME PAGE (The Pinterest Look) */
+.home-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-image: url('https://i.pinimg.com/1200x/28/dc/13/28dc13bd9853ebcea1c007a6651e74a2.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  width: 100%;
+  max-width: 1200px;
+  padding: 20px;
+}
+
+.main-title {
+  color: white;
+  font-size: clamp(2.5rem, 5vw, 3.8rem);
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.sub-title {
+  color: white;
+  font-size: 1.3rem;
+  margin-bottom: 50px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+.role-card {
+  background: white;
+  padding: 50px 30px;
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.icon-circle {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 25px;
+}
+
+.continue-btn {
+  width: 100%;
+  max-width: 240px;
+  padding: 16px;
+  border-radius: 50px;
+  color: white;
+  text-decoration: none;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* 3. AUTH PAGES (Login & Register - Peach Background) */
+.auth-page {
+  min-height: 100vh;
+  background-color: #FFF5EE; /* That specific light peach/cream color */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.back-link {
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.auth-card {
+  background: white;
+  width: 100%;
+  max-width: 500px;
+  padding: 50px 40px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-icon-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.auth-title {
+  color: #0f172a;
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.auth-subtitle {
+  color: #64748b;
+  margin-bottom: 35px;
+  text-align: center;
+}
+
+.input-group {
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #334155;
+}
+
+.input-group input, .auth-select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.auth-footer {
+  margin-top: 25px;
+  color: #64748b;
+}
+
+/* 4. NGO DASHBOARD (Orange Sidebar & Panel) */
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 280px;
+  background-color: #4C7A7A; /* NGO Teal */
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 0;
+  position: fixed;
+  height: 100vh;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  padding: 0 25px;
+  margin-bottom: 40px;
+  gap: 15px;
+}
+
+.menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 18px 25px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  gap: 15px;
+}
+
+.menu-item.active {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-left: 6px solid white;
+}
+
+.main-content {
+  margin-left: 280px;
+  flex-grow: 1;
+  padding: 40px 60px;
+  background-color: #f8fafc;
+}
+
+.dashboard-card {
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+/* --- VOLUNTEER DASHBOARD THEME --- */
+.volunteer-sidebar {
+  background-color: #8B7E74 !important; /* Volunteer Taupe */
+}
+
+.volunteer-avatar {
+  background-color: #8B7E74 !important;
+}
+
+.horizontal-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px;
+  background: white;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  border: 1px solid #f1f5f9;
+}
+
+.card-info h3 {
+  font-size: 1.25rem;
+  color: #0f172a;
+  margin-bottom: 5px;
+}
+
+.by-text {
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.meta-text {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+/* Volunteer Buttons */
+.blue-btn {
+  background-color: #C76D5E; /* Volunteer Terracotta */
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.blue-outline-btn {
+  background: white;
+  color: #C76D5E; /* Volunteer Terracotta */
+  border: 2px solid #C76D5E;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Status Tags */
+.status-tag {
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.status-tag.completed {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.status-tag.upcoming {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.filter-input {
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  width: 250px;
+}
+
+/* --- DONOR DASHBOARD THEME --- */
+.donor-sidebar {
+  background-color: #3E5C76 !important; /* Donor Blue */
+}
+
+.donor-avatar {
+  background-color: #3E5C76 !important;
+}
+
+.raised-text {
+  font-size: 0.9rem;
+  margin-top: 5px;
+  color: #64748b;
+}
+
+.raised-text span {
+  color: #3E5C76; /* Donor Blue */
+  font-weight: 700;
+}
+
+.green-btn {
+  background-color: #3E5C76; /* Donor Blue */
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.green-btn-wide {
+  background-color: #3E5C76; /* Donor Blue */
+  color: white;
+  border: none;
+  padding: 15px;
+  width: 100%;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.green-outline-btn {
+  background: white;
+  color: #3E5C76; /* Donor Blue */
+  border: 2px solid #3E5C76;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dashboard-form {
+  max-width: 600px;
+}
+
+.dashboard-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  min-height: 120px;
+  font-family: inherit;
+  outline: none;
+}
+
+/* --- UI Improvements for Buttons --- */
+
+/* Logout Button */
+.logout-btn-sidebar {
+  margin: auto 20px 20px 20px; /* Push to bottom */
+  padding: 14px 25px;
+  background-color: #ef4444; /* Standard Red */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background-color 0.2s, transform 0.2s;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+}
+
+.logout-btn-sidebar:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
+}
+
+/* Action Buttons (New Event, Post Need) */
+.action-btn {
+  background-color: #4C7A7A; /* Default to NGO Teal */
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(76, 122, 122, 0.2);
+}
+.action-btn:hover {
+  background-color: #3b5f5f;
+  transform: translateY(-2px);
+}
+
+/* Outline Action Buttons (Applicants) */
+.outline-action-btn {
+  background-color: white;
+  color: #4C7A7A;
+  border: 2px solid #4C7A7A;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.outline-action-btn:hover {
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+}
+

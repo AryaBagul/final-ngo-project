@@ -1,0 +1,45 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node modules and dependencies
+node_modules
+dist
+dist-ssr
+*.local
+
+# Environment Variables (CRITICAL: DO NOT COMMIT THESE)
+.env
+.env.local
+.env.*
+backend/.env
+frontend/.env
+*.env
+
+# Editor and OS generated files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Thumbs.db
+
+# Build outputs
+frontend/dist
+frontend/build
+backend/build
+
+# Cache
+.npm
+.eslintcache
+.stylelintcache
+.vscode-test
