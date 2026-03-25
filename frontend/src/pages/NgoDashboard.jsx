@@ -1,444 +1,148 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
+import ChatContainer from "../components/chat/ChatContainer";
 
 function NgoDashboard() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("profile");
+const navigate = useNavigate();
+const [activeTab, setActiveTab] = useState("profile");
 
-  // Profile info from localStorage
-  const userName = localStorage.getItem("userName") || "NGO";
-  const userEmail = localStorage.getItem("userEmail") || "";
-  const initials = userName.slice(0, 2).toUpperCase();
+const userName = localStorage.getItem("userName") || "NGO";
+const userEmail = localStorage.getItem("userEmail") || "";
+const initials = userName.slice(0, 2).toUpperCase();
 
-  const userContact = localStorage.getItem("contactNumber") || "Not provided";
-  const userAddress = localStorage.getItem("address") || "Not provided";
-  const rawBirthdate = localStorage.getItem("birthdate");
-  const userBirthdate = rawBirthdate ? new Date(rawBirthdate).toLocaleDateString() : "Not provided";
+const userContact = localStorage.getItem("contactNumber") || "Not provided";
+const userAddress = localStorage.getItem("address") || "Not provided";
+const rawBirthdate = localStorage.getItem("birthdate");
+const userBirthdate = rawBirthdate
+? new Date(rawBirthdate).toLocaleDateString()
+: "Not provided";
 
-  let ngoDetails = {};
-  try {
-    const storedNgoDetails = localStorage.getItem("ngoDetails");
-    if (storedNgoDetails) ngoDetails = JSON.parse(storedNgoDetails);
-  } catch(e){}
+const [events, setEvents] = useState([]);
+const [eventsLoading, setEventsLoading] = useState(false);
+const [eventError, setEventError] = useState("");
 
-  // ── Events State ──────────────────────────────────────
-  const [events, setEvents] = useState([]);
-  const [eventsLoading, setEventsLoading] = useState(false);
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [eventForm, setEventForm] = useState({ title: "", description: "", location: "", date: "", time: "", skillsRequired: "", volunteersNeeded: "" });
-  const [eventError, setEventError] = useState("");
+const [needs, setNeeds] = useState([]);
+const [needsLoading, setNeedsLoading] = useState(false);
+const [needError, setNeedError] = useState("");
 
-  // ── Urgent Needs State ────────────────────────────────
-  const [needs, setNeeds] = useState([]);
-  const [needsLoading, setNeedsLoading] = useState(false);
-  const [showNeedForm, setShowNeedForm] = useState(false);
-  const [needForm, setNeedForm] = useState({ title: "", description: "", itemsNeeded: "", location: "" });
-  const [needError, setNeedError] = useState("");
+const handleLogout = () => {
+localStorage.clear();
+navigate("/");
+};
 
-  // ── Applications State ────────────────────────────────
-  const [applications, setApplications] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [appsLoading, setAppsLoading] = useState(false);
+const fetchEvents = async () => {
+setEventsLoading(true);
+try {
+const res = await API.get("/events/my-events");
+setEvents(res.data);
+} catch (err) {
+setEventError("Failed to load events");
+} finally {
+setEventsLoading(false);
+}
+};
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate("/");
-  };
+const fetchNeeds = async () => {
+setNeedsLoading(true);
+try {
+const res = await API.get("/urgent/my-needs");
+setNeeds(res.data);
+} catch (err) {
+setNeedError("Failed to load urgent needs");
+} finally {
+setNeedsLoading(false);
+}
+};
 
-  // ── Fetch Events ──────────────────────────────────────
-  const fetchEvents = async () => {
-    setEventsLoading(true);
-    setEventError("");
-    try {
-      const res = await API.get("/events/my-events");
-      setEvents(res.data);
-    } catch (err) {
-      setEventError(err.response?.data?.message || "Failed to load events");
-    } finally {
-      setEventsLoading(false);
-    }
-  };
+useEffect(() => {
+if (activeTab === "calendar") fetchEvents();
+if (activeTab === "needs") fetchNeeds();
+}, [activeTab]);
 
-  // ── Fetch Urgent Needs ────────────────────────────────
-  const fetchNeeds = async () => {
-    setNeedsLoading(true);
-    setNeedError("");
-    try {
-      const res = await API.get("/urgent/my-needs");
-      setNeeds(res.data);
-    } catch (err) {
-      setNeedError(err.response?.data?.message || "Failed to load urgent needs");
-    } finally {
-      setNeedsLoading(false);
-    }
-  };
+const menuItems = [
+{ id: "profile", label: "Profile", icon: "👤" },
+{ id: "calendar", label: "Event Calendar", icon: "📅" },
+{ id: "applications", label: "Applications", icon: "📋" },
+{ id: "needs", label: "Urgent Needs", icon: "❗" },
+{ id: "chat", label: "Connect with NGOs", icon: "💬" },
+];
 
-  // ── Fetch Applications for an Event ──────────────────
-  const fetchApplications = async (eventId, eventTitle) => {
-    setSelectedEvent(eventTitle);
-    setAppsLoading(true);
-    try {
-      const res = await API.get(`/applications/event/${eventId}`);
-      setApplications(res.data);
-    } catch (err) {
-      setApplications([]);
-    } finally {
-      setAppsLoading(false);
-    }
-  };
+return ( <div className="dashboard-wrapper">
+{/* SIDEBAR */} <div className="sidebar"> <div className="sidebar-brand">
+<span style={{ fontSize: "28px" }}>🏢</span> <h2>NGO Panel</h2> </div>
 
-  // ── Update Application Status ─────────────────────────
-  const updateAppStatus = async (appId, status) => {
-    try {
-      await API.put(`/applications/${appId}`, { status });
-      setApplications((prev) =>
-        prev.map((a) => (a._id === appId ? { ...a, status } : a))
-      );
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to update status");
-    }
-  };
 
-  // ── Create Event ──────────────────────────────────────
-  const handleCreateEvent = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        ...eventForm,
-        skillsRequired: eventForm.skillsRequired.split(",").map((s) => s.trim()).filter(Boolean),
-        volunteersNeeded: Number(eventForm.volunteersNeeded) || undefined,
-      };
-      await API.post("/events/create", payload);
-      setShowEventForm(false);
-      setEventForm({ title: "", description: "", location: "", date: "", time: "", skillsRequired: "", volunteersNeeded: "" });
-      fetchEvents();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to create event");
-    }
-  };
-
-  // ── Delete Event ──────────────────────────────────────
-  const handleDeleteEvent = async (id) => {
-    if (!window.confirm("Delete this event?")) return;
-    try {
-      await API.delete(`/events/${id}`);
-      fetchEvents();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete event");
-    }
-  };
-
-  // ── Create Urgent Need ────────────────────────────────
-  const handleCreateNeed = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        ...needForm,
-        itemsNeeded: needForm.itemsNeeded.split(",").map((s) => s.trim()).filter(Boolean),
-      };
-      await API.post("/urgent/create", payload);
-      setShowNeedForm(false);
-      setNeedForm({ title: "", description: "", itemsNeeded: "", location: "" });
-      fetchNeeds();
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to post urgent need");
-    }
-  };
-
-  // Load data when tab changes
-  useEffect(() => {
-    if (activeTab === "calendar") fetchEvents();
-    if (activeTab === "needs") fetchNeeds();
-    if (activeTab === "applications") fetchEvents();
-  }, [activeTab]);
-
-  const menuItems = [
-    { id: "profile", label: "Profile", icon: "👤" },
-    { id: "calendar", label: "Event Calendar", icon: "📅" },
-    { id: "applications", label: "Applications", icon: "📋" },
-    { id: "needs", label: "Urgent Needs", icon: "❗" },
-  ];
-
-  return (
-    <div className="dashboard-wrapper">
-      {/* LEFT SIDEBAR PANEL */}
-      <div className="sidebar">
-        <div className="sidebar-brand">
-          <span style={{ fontSize: '28px' }}>🏢</span>
-          <h2>NGO Panel</h2>
-        </div>
-        <nav className="sidebar-menu">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              className={`menu-item ${activeTab === item.id ? "active" : ""}`}
-              onClick={() => setActiveTab(item.id)}
-            >
-              <span className="menu-icon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <button className="logout-btn-sidebar" onClick={handleLogout}>
-          <span className="menu-icon">↪️</span> Logout
+    <nav className="sidebar-menu">
+      {menuItems.map((item) => (
+        <button
+          key={item.id}
+          className={`menu-item ${
+            activeTab === item.id ? "active" : ""
+          }`}
+          onClick={() => setActiveTab(item.id)}
+        >
+          <span className="menu-icon">{item.icon}</span>
+          {item.label}
         </button>
-      </div>
+      ))}
+    </nav>
 
-      {/* RIGHT MAIN CONTENT */}
-      <div className="main-content">
-        <header className="content-header">
-          <h1>NGO Dashboard</h1>
-          <div className="user-avatar-circle">{initials}</div>
-        </header>
+    <button className="logout-btn-sidebar" onClick={handleLogout}>
+      ↪️ Logout
+    </button>
+  </div>
 
-        <div className="dashboard-card">
+  {/* MAIN CONTENT */}
+  <div className="main-content">
+    <header className="content-header">
+      <h1>NGO Dashboard</h1>
+      <div className="user-avatar-circle">{initials}</div>
+    </header>
 
-          {/* ── PROFILE TAB ─────────────────────────────── */}
-          {activeTab === "profile" && (
-            <div className="profile-section">
-              <div className="section-header">
-                <h2>NGO Profile</h2>
-              </div>
-              <div className="profile-grid">
-                <div className="info-item">
-                  <label>🏢 NGO Name</label>
-                  <p>{userName}</p>
-                </div>
-                <div className="info-item">
-                  <label>✉️ Email</label>
-                  <p>{userEmail}</p>
-                </div>
-                <div className="info-item">
-                  <label>📞 Contact</label>
-                  <p>{userContact}</p>
-                </div>
-                <div className="info-item">
-                  <label>🎂 Found Date / Birthdate</label>
-                  <p>{userBirthdate}</p>
-                </div>
-                <div className="info-item-wide">
-                  <label>📍 Address</label>
-                  <p>{userAddress}</p>
-                </div>
-                
-                {ngoDetails.organizationName && (
-                  <div className="info-item-wide" style={{ background: '#f8fafc', padding: '15px', borderRadius: '10px' }}>
-                    <label>🔖 Extended Details</label>
-                    <p style={{ marginTop: '5px' }}><strong>Organization:</strong> {ngoDetails.organizationName}</p>
-                    {ngoDetails.description && <p><strong>Description:</strong> {ngoDetails.description}</p>}
-                    {ngoDetails.location && <p><strong>Location:</strong> {ngoDetails.location}</p>}
-                  </div>
-                )}
-                
-                <div className="info-item">
-                  <label>🔑 Role</label>
-                  <p style={{ textTransform: 'capitalize' }}>NGO</p>
-                </div>
-                <div className="info-item">
-                  <label>✅ Status</label>
-                  <p style={{ color: '#4C7A7A' }}>Active</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── EVENT CALENDAR TAB ──────────────────────── */}
-          {activeTab === "calendar" && (
-            <div>
-              <div className="section-header">
-                <h2>My Events</h2>
-                <button className="action-btn" onClick={() => setShowEventForm(!showEventForm)}>
-                  {showEventForm ? "✕ Cancel" : "＋ New Event"}
-                </button>
-              </div>
-
-              {showEventForm && (
-                <form onSubmit={handleCreateEvent} className="dashboard-form" style={{ marginBottom: '20px' }}>
-                  <div className="input-group">
-                    <label>Title *</label>
-                    <input required value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Event title" />
-                  </div>
-                  <div className="input-group">
-                    <label>Description</label>
-                    <textarea className="dashboard-textarea" value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} placeholder="Describe the event" />
-                  </div>
-                  <div className="input-group">
-                    <label>Location *</label>
-                    <input required value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} placeholder="Event location" />
-                  </div>
-                  <div className="input-group">
-                    <label>Date *</label>
-                    <input required type="date" value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} />
-                  </div>
-                  <div className="input-group">
-                    <label>Time</label>
-                    <input type="time" value={eventForm.time} onChange={e => setEventForm({ ...eventForm, time: e.target.value })} />
-                  </div>
-                  <div className="input-group">
-                    <label>Skills Required (comma-separated)</label>
-                    <input value={eventForm.skillsRequired} onChange={e => setEventForm({ ...eventForm, skillsRequired: e.target.value })} placeholder="e.g. Teaching, Healthcare" />
-                  </div>
-                  <div className="input-group">
-                    <label>Volunteers Needed</label>
-                    <input type="number" value={eventForm.volunteersNeeded} onChange={e => setEventForm({ ...eventForm, volunteersNeeded: e.target.value })} placeholder="Number of volunteers" />
-                  </div>
-                  <button type="submit" className="auth-btn" style={{ backgroundColor: '#4C7A7A', marginTop: '8px' }}>Create Event</button>
-                </form>
-              )}
-
-              {eventsLoading && <p style={{ padding: '20px', textAlign: 'center' }}>Loading events...</p>}
-              {eventError && <p style={{ color: 'red', padding: '10px' }}>{eventError}</p>}
-
-              {!eventsLoading && events.length === 0 && (
-                <p style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>No events yet. Create your first event!</p>
-              )}
-
-              <div className="list-container">
-                {events.map((ev) => (
-                  <div key={ev._id} className="horizontal-card">
-                    <div className="card-info">
-                      <h3>{ev.title}</h3>
-                      <p className="meta-text">
-                        📅 {new Date(ev.date).toLocaleDateString()} &nbsp;
-                        📍 {ev.location} &nbsp;
-                        {ev.volunteersNeeded && `👥 ${ev.volunteersNeeded} needed`}
-                      </p>
-                      {ev.skillsRequired?.length > 0 && (
-                        <p className="meta-text">🏷️ {ev.skillsRequired.join(", ")}</p>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                      <button className="outline-action-btn" onClick={() => { setActiveTab("applications"); fetchApplications(ev._id, ev.title); }}>
-                        Applicants
-                      </button>
-                      <button
-                        onClick={() => handleDeleteEvent(ev._id)}
-                        style={{ padding: '8px 14px', background: '#ff4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── APPLICATIONS TAB ────────────────────────── */}
-          {activeTab === "applications" && (
-            <div>
-              <div className="section-header">
-                <h2>Applications {selectedEvent ? `— ${selectedEvent}` : ""}</h2>
-                {!selectedEvent && (
-                  <p style={{ opacity: 0.6, fontSize: '0.9rem', margin: 0 }}>Click "Applicants" on an event to view applications</p>
-                )}
-              </div>
-
-              {!selectedEvent && (
-                <div style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>
-                  <p>Go to Event Calendar → Click "Applicants" on any event to see applications here.</p>
-                </div>
-              )}
-
-              {appsLoading && <p style={{ padding: '20px', textAlign: 'center' }}>Loading applications...</p>}
-
-              {!appsLoading && selectedEvent && applications.length === 0 && (
-                <p style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>No applications yet for this event.</p>
-              )}
-
-              <div className="list-container">
-                {applications.map((app) => (
-                  <div key={app._id} className="horizontal-card">
-                    <div className="card-info">
-                      <h3>{app.volunteer?.name || "Unknown Volunteer"}</h3>
-                      <p className="meta-text">✉️ {app.volunteer?.email}</p>
-                      <p className="meta-text">
-                        Status: <span style={{ fontWeight: 700, color: app.status === 'approved' ? '#00C853' : app.status === 'rejected' ? '#ff4444' : '#4C7A7A', textTransform: 'capitalize' }}>{app.status}</span>
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                      <button
-                        onClick={() => updateAppStatus(app._id, "approved")}
-                        disabled={app.status === "approved"}
-                        style={{ padding: '8px 14px', background: app.status === "approved" ? '#ccc' : '#00C853', color: '#fff', border: 'none', borderRadius: '8px', cursor: app.status === "approved" ? 'not-allowed' : 'pointer', fontWeight: '600' }}
-                      >
-                        ✓ Approve
-                      </button>
-                      <button
-                        onClick={() => updateAppStatus(app._id, "rejected")}
-                        disabled={app.status === "rejected"}
-                        style={{ padding: '8px 14px', background: app.status === "rejected" ? '#ccc' : '#ff4444', color: '#fff', border: 'none', borderRadius: '8px', cursor: app.status === "rejected" ? 'not-allowed' : 'pointer', fontWeight: '600' }}
-                      >
-                        ✗ Reject
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ── URGENT NEEDS TAB ────────────────────────── */}
-          {activeTab === "needs" && (
-            <div>
-              <div className="section-header">
-                <h2>Urgent Needs</h2>
-                <button className="action-btn" onClick={() => setShowNeedForm(!showNeedForm)}>
-                  {showNeedForm ? "✕ Cancel" : "＋ Post Need"}
-                </button>
-              </div>
-
-              {showNeedForm && (
-                <form onSubmit={handleCreateNeed} className="dashboard-form" style={{ marginBottom: '20px' }}>
-                  <div className="input-group">
-                    <label>Title *</label>
-                    <input required value={needForm.title} onChange={e => setNeedForm({ ...needForm, title: e.target.value })} placeholder="e.g. Emergency Blankets Needed" />
-                  </div>
-                  <div className="input-group">
-                    <label>Description *</label>
-                    <textarea className="dashboard-textarea" required value={needForm.description} onChange={e => setNeedForm({ ...needForm, description: e.target.value })} placeholder="Describe the urgent need" />
-                  </div>
-                  <div className="input-group">
-                    <label>Items Needed (comma-separated)</label>
-                    <input value={needForm.itemsNeeded} onChange={e => setNeedForm({ ...needForm, itemsNeeded: e.target.value })} placeholder="e.g. Blankets, Food packets, Medicines" />
-                  </div>
-                  <div className="input-group">
-                    <label>Location *</label>
-                    <input required value={needForm.location} onChange={e => setNeedForm({ ...needForm, location: e.target.value })} placeholder="Location" />
-                  </div>
-                  <button type="submit" className="auth-btn" style={{ backgroundColor: '#4C7A7A', marginTop: '8px' }}>Post Urgent Need</button>
-                </form>
-              )}
-
-              {needsLoading && <p style={{ padding: '20px', textAlign: 'center' }}>Loading...</p>}
-              {needError && <p style={{ color: 'red', padding: '10px' }}>{needError}</p>}
-
-              {!needsLoading && needs.length === 0 && (
-                <p style={{ textAlign: 'center', padding: '40px', opacity: 0.6 }}>No urgent needs posted yet.</p>
-              )}
-
-              <div className="list-container">
-                {needs.map((need) => (
-                  <div key={need._id} className="horizontal-card">
-                    <div className="card-info">
-                      <h3>{need.title}</h3>
-                      <p className="by-text">{need.description}</p>
-                      {need.itemsNeeded?.length > 0 && (
-                        <p className="meta-text">📦 {need.itemsNeeded.join(", ")}</p>
-                      )}
-                      <p className="meta-text">📍 {need.location}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+    <div className="dashboard-card">
+      {/* PROFILE */}
+      {activeTab === "profile" && (
+        <div>
+          <h2>Profile</h2>
+          <p>{userName}</p>
+          <p>{userEmail}</p>
         </div>
-      </div>
+      )}
+
+      {/* EVENTS */}
+      {activeTab === "calendar" && (
+        <div>
+          <h2>Events</h2>
+          {events.map((e) => (
+            <p key={e._id}>{e.title}</p>
+          ))}
+        </div>
+      )}
+
+      {/* NEEDS */}
+      {activeTab === "needs" && (
+        <div>
+          <h2>Urgent Needs</h2>
+          {needs.map((n) => (
+            <p key={n._id}>{n.title}</p>
+          ))}
+        </div>
+      )}
+
+      {/* CHAT */}
+      {activeTab === "chat" && (
+        <div style={{ height: "80vh" }}>
+          <h2>Connect with Other NGOs</h2>
+          <ChatContainer />
+        </div>
+      )}
     </div>
-  );
+  </div>
+</div>
+
+
+);
 }
 
 export default NgoDashboard;
