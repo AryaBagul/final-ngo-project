@@ -60,8 +60,7 @@ function RoleAuth() {
       localStorage.setItem("role", res.data.role);
       localStorage.setItem("userName", res.data.name);
       localStorage.setItem("userEmail", loginData.email);
-      localStorage.setItem("userId", res.data.id);
-      
+     localStorage.setItem("userId", res.data.id);
       if(res.data.contactNumber) localStorage.setItem("contactNumber", res.data.contactNumber);
       if(res.data.birthdate) localStorage.setItem("birthdate", res.data.birthdate);
       if(res.data.address) localStorage.setItem("address", res.data.address);

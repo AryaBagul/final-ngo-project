@@ -1,13 +1,17 @@
-import axios from "./axios";
+import API from "./axios";
 
 // create/get conversation
 export const getOrCreateConversation = (data) =>
-  axios.post("/chat/conversation", data);
+  API.post("/chat/conversation", data);
 
 // get messages
 export const getMessages = (conversationId) =>
-  axios.get(`/chat/messages/${conversationId}`);
+  API.get(`/chat/messages/${conversationId}`);
 
-// save message
+// send message
 export const sendMessageAPI = (data) =>
-  axios.post("/chat/message", data);
+  API.post("/chat/send", data);
+
+// ✅ NEW: mark messages as seen
+export const markMessagesSeen = (conversationId, userId) =>
+  API.put("/chat/seen", { conversationId, userId });

@@ -5,79 +5,196 @@ import {
   getMessages,
   sendMessageAPI,
 } from "../../api/chatApi";
-import MessageList from "./MessageList";
-import ChatInput from "./ChatInput";
 
-const ChatWindow = ({ selectedChat }) => {
+const ChatWindow = ({ selectedChat, openSidebar }) => {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
+  const [text, setText] = useState("");
 
-  const userId = "ngo1"; // 🔥 replace with logged-in user later
+  const [typingUser, setTypingUser] = useState(null); // ✅ NEW
 
+  const userId = localStorage.getItem("userId");
+
+  // 🔹 SETUP CHAT
   useEffect(() => {
     const setupChat = async () => {
       if (!selectedChat) return;
 
-      const receiverId = selectedChat._id;
+      try {
+        const receiverId = selectedChat._id;
 
-      // 1️⃣ Get or create conversation
-      const res = await getOrCreateConversation({
-        senderId: userId,
-        receiverId,
-      });
+        const res = await getOrCreateConversation({
+          senderId: userId,
+          receiverId,
+        });
 
-      const convId = res.data._id;
-      setConversationId(convId);
+        const convId = res.data._id;
+        setConversationId(convId);
 
-      // 2️⃣ Fetch old messages
-      const msgRes = await getMessages(convId);
-      setMessages(msgRes.data);
+        const msgRes = await getMessages(convId);
+        setMessages(msgRes.data);
 
-      // 3️⃣ Join socket room
-      socket.emit("joinConversation", {
-        sender: userId,
-        receiver: receiverId,
-      });
+        socket.emit("joinConversation", {
+          sender: userId,
+          receiver: receiverId,
+        });
+
+        socket.emit("markSeen", {
+          conversationId: convId,
+          userId,
+        });
+      } catch (err) {
+        console.error("Chat setup error:", err);
+      }
     };
 
     setupChat();
-  }, [selectedChat]);
+  }, [selectedChat, userId]);
 
+  // 🔹 SOCKET LISTENERS
   useEffect(() => {
     socket.on("receiveMessage", (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
-    return () => socket.off("receiveMessage");
-  }, []);
+    socket.on("messageDelivered", ({ messageId }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId
+            ? { ...msg, status: "delivered" }
+            : msg
+        )
+      );
+    });
 
-  const handleSend = async (text) => {
-    if (!conversationId) return;
+    socket.on("messagesSeen", () => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.sender === userId
+            ? { ...msg, status: "seen" }
+            : msg
+        )
+      );
+    });
+
+    // ✅ TYPING LISTENER
+    socket.on("typing", ({ sender }) => {
+      if (sender === selectedChat?._id) {
+        setTypingUser(sender);
+
+        setTimeout(() => setTypingUser(null), 2000);
+      }
+    });
+
+    return () => {
+      socket.off("receiveMessage");
+      socket.off("messageDelivered");
+      socket.off("messagesSeen");
+      socket.off("typing");
+    };
+  }, [userId, selectedChat]);
+
+  // 🔹 SEND MESSAGE
+  const handleSend = async () => {
+    if (!text.trim() || !conversationId) return;
+
+    const messageText = text;
+    setText(""); // ✅ clear immediately
 
     const message = {
       conversationId,
       sender: userId,
       receiver: selectedChat._id,
-      text,
+      text: messageText,
+      status: "sent",
     };
 
-    // 1️⃣ Send via socket (real-time)
-    socket.emit("sendMessage", message);
-
-    // 2️⃣ Update UI instantly
-    setMessages((prev) => [...prev, message]);
-
-    // 3️⃣ Save to DB
-    await sendMessageAPI(message);
+    try {
+      socket.emit("sendMessage", message);
+      await sendMessageAPI(message);
+    } catch (err) {
+      console.error("Send message error:", err);
+    }
   };
 
-  if (!selectedChat) return <div>Select a chat</div>;
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") handleSend();
+  };
+
+  // 🔹 TYPING EMIT (SMART)
+  const handleTyping = (e) => {
+    setText(e.target.value);
+
+    socket.emit("typing", {
+      sender: userId,
+      receiver: selectedChat._id,
+    });
+  };
+
+  // 🔹 EMPTY STATE
+  if (!selectedChat) {
+    return (
+      <div className="chat-window">
+        <div className="chat-header">Chat</div>
+        <div className="message-list">
+          <p style={{ textAlign: "center", marginTop: "50px" }}>
+            Select an NGO to start chatting 💬
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ width: "70%", padding: "10px" }}>
-      <h3>{selectedChat.name}</h3>
-      <MessageList messages={messages} currentUser={userId} />
-      <ChatInput onSend={handleSend} />
+    <div className="chat-window">
+      {/* HEADER */}
+      <div className="chat-header">
+        <span className="back-btn" onClick={openSidebar}>
+          ⬅
+        </span>
+        {selectedChat.name}
+      </div>
+
+      {/* ✅ TYPING INDICATOR */}
+      {typingUser && (
+        <div className="typing" style={{ paddingLeft: "10px" }}>
+          Typing...
+        </div>
+      )}
+
+      {/* MESSAGES */}
+      <div className="message-list">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`message ${
+              msg.sender === userId ? "own" : "other"
+            }`}
+          >
+            <span>{msg.text}</span>
+
+            {msg.sender === userId && (
+              <span className={`tick ${msg.status}`}>
+                {msg.status === "sent" && "✓"}
+                {msg.status === "delivered" && "✓✓"}
+                {msg.status === "seen" && "✓✓"}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* INPUT */}
+      <div className="chat-input">
+        <input
+          type="text"
+          placeholder="Type a message..."
+          value={text}
+          onChange={handleTyping} // ✅ UPDATED
+          onKeyDown={handleKeyPress}
+        />
+        <button onClick={handleSend}>Send</button>
+      </div>
     </div>
   );
 };

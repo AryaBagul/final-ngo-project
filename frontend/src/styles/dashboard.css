@@ -1,0 +1,146 @@
+/* GLOBAL */
+body {
+  background: #f5f5f0;
+  font-family: "Segoe UI", sans-serif;
+  margin: 0;
+}
+
+/* WRAPPER */
+.dashboard-wrapper {
+  display: flex;
+  height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  width: 250px;
+  background: #5f7f73; /* sage green */
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+}
+
+.sidebar button {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.sidebar button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar .active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  padding: 30px;
+  background: #f5f5f0;
+  overflow-y: auto;
+}
+
+/* HEADER */
+.main-content h1 {
+  margin-bottom: 20px;
+}
+
+/* CARD */
+.dashboard-card {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* PROFILE GRID */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.info-item {
+  background: #f9faf9;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.info-item-wide {
+  grid-column: span 2;
+}
+
+/* SECTION HEADER */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* BUTTONS */
+.action-btn {
+  background: #5f7f73;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.action-btn:hover {
+  background: #4c6a60;
+}
+
+/* FORM */
+.dashboard-form {
+  background: #f9faf9;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.input-group {
+  margin-bottom: 12px;
+}
+
+.input-group input,
+.dashboard-textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* LIST CARDS */
+.horizontal-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9faf9;
+  padding: 15px;
+  border-radius: 15px;
+  margin-bottom: 10px;
+}
+
+.card-info h3 {
+  margin: 0;
+}
+
+.meta-text {
+  font-size: 13px;
+  color: #666;
+}
