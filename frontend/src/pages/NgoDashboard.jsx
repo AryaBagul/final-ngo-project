@@ -380,7 +380,7 @@ function NgoDashboard() {
           )}
           {activeTab === "chat" && (
   <div style={{ height: "80vh" }}>
-    <h2>Connect with Other NGOs</h2>
+    
     <ChatContainer />
   </div>
 )}

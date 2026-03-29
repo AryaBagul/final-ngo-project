@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import socket from "../../services/socket";
 import {
   getOrCreateConversation,
@@ -6,14 +6,56 @@ import {
   sendMessageAPI,
 } from "../../api/chatApi";
 
-const ChatWindow = ({ selectedChat, openSidebar }) => {
+const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [text, setText] = useState("");
+  const [typingUser, setTypingUser] = useState(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
-  const [typingUser, setTypingUser] = useState(null); // ✅ NEW
-
+  const messageListRef = useRef(null);
   const userId = localStorage.getItem("userId");
+
+  // ✅ SCROLL FUNCTION
+  const scrollToBottom = () => {
+    const el = messageListRef.current;
+    if (!el) return;
+
+    el.scrollTop = el.scrollHeight;
+    setShowScrollBtn(false);
+  };
+
+  // ✅ SCROLL DETECTION
+  useEffect(() => {
+    const el = messageListRef.current;
+    if (!el) return;
+
+    const handleScroll = () => {
+      const distanceFromBottom =
+        el.scrollHeight - el.scrollTop - el.clientHeight;
+
+      setShowScrollBtn(distanceFromBottom > 80);
+    };
+
+    el.addEventListener("scroll", handleScroll);
+
+    setTimeout(handleScroll, 100);
+
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [messages]);
+
+  // ✅ AUTO SCROLL
+  useEffect(() => {
+    const el = messageListRef.current;
+    if (!el) return;
+
+    const distanceFromBottom =
+      el.scrollHeight - el.scrollTop - el.clientHeight;
+
+    if (distanceFromBottom < 80) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages]);
 
   // 🔹 SETUP CHAT
   useEffect(() => {
@@ -32,7 +74,15 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
         setConversationId(convId);
 
         const msgRes = await getMessages(convId);
-        setMessages(msgRes.data);
+
+        const updatedMsgs = msgRes.data.map((msg) => ({
+          ...msg,
+          status: msg.status || "sent",
+        }));
+
+        setMessages(updatedMsgs);
+
+        setTimeout(scrollToBottom, 100);
 
         socket.emit("joinConversation", {
           sender: userId,
@@ -41,7 +91,7 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
 
         socket.emit("markSeen", {
           conversationId: convId,
-          userId,
+          viewerId: userId,
         });
       } catch (err) {
         console.error("Chat setup error:", err);
@@ -54,7 +104,11 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
   // 🔹 SOCKET LISTENERS
   useEffect(() => {
     socket.on("receiveMessage", (msg) => {
-      setMessages((prev) => [...prev, msg]);
+      setMessages((prev) => {
+        const exists = prev.some((m) => m._id === msg._id);
+        if (exists) return prev;
+        return [...prev, msg];
+      });
     });
 
     socket.on("messageDelivered", ({ messageId }) => {
@@ -67,21 +121,19 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
       );
     });
 
-    socket.on("messagesSeen", () => {
+    socket.on("messagesSeen", ({ messageId }) => {
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.sender === userId
+          msg._id === messageId
             ? { ...msg, status: "seen" }
             : msg
         )
       );
     });
 
-    // ✅ TYPING LISTENER
     socket.on("typing", ({ sender }) => {
       if (sender === selectedChat?._id) {
         setTypingUser(sender);
-
         setTimeout(() => setTypingUser(null), 2000);
       }
     });
@@ -98,16 +150,14 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
   const handleSend = async () => {
     if (!text.trim() || !conversationId) return;
 
-    const messageText = text;
-    setText(""); // ✅ clear immediately
-
     const message = {
       conversationId,
       sender: userId,
       receiver: selectedChat._id,
-      text: messageText,
-      status: "sent",
+      text,
     };
+
+    setText("");
 
     try {
       socket.emit("sendMessage", message);
@@ -121,7 +171,6 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
     if (e.key === "Enter") handleSend();
   };
 
-  // 🔹 TYPING EMIT (SMART)
   const handleTyping = (e) => {
     setText(e.target.value);
 
@@ -138,7 +187,7 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
         <div className="chat-header">Chat</div>
         <div className="message-list">
           <p style={{ textAlign: "center", marginTop: "50px" }}>
-            Select an NGO to start chatting 💬
+            Select an NGO to start chatting ......
           </p>
         </div>
       </div>
@@ -147,42 +196,53 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
 
   return (
     <div className="chat-window">
-      {/* HEADER */}
+      {/* ✅ HEADER */}
       <div className="chat-header">
-        <span className="back-btn" onClick={openSidebar}>
-          ⬅
+        <span className="chat-title">
+        {selectedChat.name || "Chat"}
         </span>
-        {selectedChat.name}
       </div>
 
-      {/* ✅ TYPING INDICATOR */}
-      {typingUser && (
-        <div className="typing" style={{ paddingLeft: "10px" }}>
-          Typing...
-        </div>
-      )}
+      {/* TYPING */}
+      {typingUser && <div className="typing">Typing...</div>}
 
       {/* MESSAGES */}
-      <div className="message-list">
-        {messages.map((msg, index) => (
+      <div className="message-list" ref={messageListRef}>
+        {messages.map((msg) => (
           <div
-            key={index}
+            key={msg._id}
             className={`message ${
               msg.sender === userId ? "own" : "other"
             }`}
           >
-            <span>{msg.text}</span>
+            <div className="message-content">
+              <span className="message-text">{msg.text}</span>
 
-            {msg.sender === userId && (
-              <span className={`tick ${msg.status}`}>
-                {msg.status === "sent" && "✓"}
-                {msg.status === "delivered" && "✓✓"}
-                {msg.status === "seen" && "✓✓"}
-              </span>
-            )}
+              <div className="message-meta">
+                <span className="message-time">
+                  {new Date(msg.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+
+                {msg.sender === userId && (
+                  <span className={`tick ${msg.status}`}>
+                    ✓✓
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* SCROLL BUTTON */}
+      {showScrollBtn && (
+        <button className="scroll-to-bottom" onClick={scrollToBottom}>
+          ↓
+        </button>
+      )}
 
       {/* INPUT */}
       <div className="chat-input">
@@ -190,7 +250,7 @@ const ChatWindow = ({ selectedChat, openSidebar }) => {
           type="text"
           placeholder="Type a message..."
           value={text}
-          onChange={handleTyping} // ✅ UPDATED
+          onChange={handleTyping}
           onKeyDown={handleKeyPress}
         />
         <button onClick={handleSend}>Send</button>

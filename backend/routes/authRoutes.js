@@ -7,10 +7,12 @@ router.post("/login", login);
 router.get("/ngos", getNGOs);
 router.get("/all-ngos", async (req, res) => {
   try {
-    const ngos = await Users.find({ role: "ngo" }).select("name location");
+    const ngos = await Users.find({ role: "ngo" });
+
     res.json(ngos);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error in /all-ngos:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 module.exports = router;
