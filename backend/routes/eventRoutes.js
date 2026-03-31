@@ -14,6 +14,7 @@ router.post("/create", authMiddleware, async (req, res) => {
     const event = await Event.create({
       ...req.body,
       ngo: req.user.id,
+      createdBy: req.user.id
     });
 
     res.status(201).json(event);

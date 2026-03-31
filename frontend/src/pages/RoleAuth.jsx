@@ -51,10 +51,9 @@ function RoleAuth() {
       });
 
       const res = await API.post("/auth/login", {
-        email: loginData.email,
-        password: loginData.password,
-        role
-      });
+  email: loginData.email,
+  password: loginData.password
+});
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
@@ -68,7 +67,17 @@ function RoleAuth() {
 
       alert("Login successful");
 
-      navigate(`/${role}-dashboard`);
+      const userRole = res.data.role;
+
+if (userRole === "admin") {
+  navigate("/admin");
+} else if (userRole === "ngo") {
+  navigate("/ngo-dashboard");
+} else if (userRole === "donor") {
+  navigate("/donor-dashboard");
+} else {
+  navigate("/volunteer-dashboard");
+}
 
     } catch (err) {
 

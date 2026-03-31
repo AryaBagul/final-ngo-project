@@ -17,7 +17,9 @@ function RoleCard({ role, title, desc }) {
   return (
     <div
       className={`role-card ${role}`}
-      onClick={() => navigate(`/auth/${role}`)}
+     onClick={() => {
+  navigate(`/auth/${role}`);
+}}
     >
 
       <img

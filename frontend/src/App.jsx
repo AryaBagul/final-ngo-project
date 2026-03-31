@@ -5,7 +5,7 @@ import DonorDashboard from "./pages/DonorDashboard";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import NgoDashboard from "./pages/NgoDashboard";
 import PrivateRoute from "./utils/PrivateRoute";
-
+import AdminDashboard from "./pages/AdminDashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -23,7 +23,14 @@ function App() {
             </PrivateRoute>
           }
         />
-
+         <Route
+      path="/admin"
+      element={
+        <PrivateRoute>
+          <AdminDashboard />
+        </PrivateRoute>
+      }
+    />
         <Route
           path="/volunteer-dashboard"
           element={

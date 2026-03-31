@@ -49,9 +49,7 @@ exports.login = async (req, res) => {
     }
 
     // Role Validation
-    if (user.role !== role) {
-      return res.status(403).json({ message: `Access denied. You are registered as ${user.role}.` });
-    }
+   
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
