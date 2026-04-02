@@ -20,7 +20,7 @@ function NgoDashboard() {
   try {
     const storedNgoDetails = localStorage.getItem("ngoDetails");
     if (storedNgoDetails) ngoDetails = JSON.parse(storedNgoDetails);
-  } catch(e){}
+  } catch (e) { }
 
   // ── Events State ──────────────────────────────────────
   const [events, setEvents] = useState([]);
@@ -221,7 +221,7 @@ function NgoDashboard() {
                   <label>📍 Address</label>
                   <p>{userAddress}</p>
                 </div>
-                
+
                 {ngoDetails.organizationName && (
                   <div className="info-item-wide" style={{ background: '#f8fafc', padding: '15px', borderRadius: '10px' }}>
                     <label>🔖 Extended Details</label>
@@ -230,7 +230,7 @@ function NgoDashboard() {
                     {ngoDetails.location && <p><strong>Location:</strong> {ngoDetails.location}</p>}
                   </div>
                 )}
-                
+
                 <div className="info-item">
                   <label>🔑 Role</label>
                   <p style={{ textTransform: 'capitalize' }}>NGO</p>
