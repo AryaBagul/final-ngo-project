@@ -41,7 +41,9 @@ const donationSchema = new mongoose.Schema(
                 message: "Items required for item donation",
             },
         },
-
+           paymentId: {
+         type: String,
+          },
         paymentMethod: {
             type: String,
             enum: ["cash", "online"],

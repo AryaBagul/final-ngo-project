@@ -70,19 +70,86 @@ function DonorDashboard() {
   const handleDonateChange = (e) => {
     setDonateForm({ ...donateForm, [e.target.name]: e.target.value });
   };
+  const handleOnlinePayment = async () => {
+  try {
+    // 1. Create order
+    const { data: order } = await API.post("/payment/create-order", {
+      amount: donateForm.amount,
+    });
 
+    // 2. Open Razorpay popup
+    const options = {
+      key: "rzp_test_SYZv5gFi6ABefY", // 🔴 replace with your key
+      amount: order.amount,
+      currency: "INR",
+      name: "NGOConnect",
+      description: "Donation",
+      order_id: order.id,
+
+      handler: async function (response) {
+        // 3. Verify payment
+        const verifyRes = await API.post("/payment/verify", {
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          ngoId: donateForm.ngo,
+          amount: donateForm.amount,
+        });
+
+        if (verifyRes.data.success) {
+          alert("Payment Successful 🎉");
+
+          setDonateForm({
+            ngo: "",
+            type: "money",
+            amount: "",
+            items: "",
+            paymentMethod: "online",
+          });
+
+          setActiveTab("history");
+          fetchDonations();
+        } else {
+          alert("Payment verification failed");
+        }
+      },
+
+      theme: {
+        color: "#3E5C76",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.error(err);
+    alert("Payment failed");
+  }
+};
   const handleDonateSubmit = async (e) => {
-    e.preventDefault();
-    if (!donateForm.ngo) {
-      alert("Please select an NGO");
+  e.preventDefault();
+
+  if (!donateForm.ngo) {
+    alert("Please select an NGO");
+    return;
+  }
+
+  // 💰 MONEY → Razorpay
+  if (donateForm.type === "money") {
+    if (!donateForm.amount) {
+      alert("Enter amount");
       return;
     }
-    if (donateForm.type === "money" && !donateForm.amount) {
-      alert("Please enter a valid amount");
-      return;
-    }
-    if (donateForm.type === "items" && !donateForm.items) {
-      alert("Please specify the items");
+
+    await handleOnlinePayment();
+    return;
+  }
+
+  // 📦 ITEMS → normal API
+  if (donateForm.type === "items") {
+    if (!donateForm.items) {
+      alert("Enter items");
       return;
     }
 
@@ -90,30 +157,24 @@ function DonorDashboard() {
       const payload = {
         donor: userId,
         ngo: donateForm.ngo,
-        type: donateForm.type,
-        amount: donateForm.type === "money" ? Number(donateForm.amount) : undefined,
-        items: donateForm.type === "items" ? donateForm.items : undefined,
-        paymentMethod: donateForm.paymentMethod,
+        type: "items",
+        items: donateForm.items,
+        paymentMethod: "cash",
       };
 
       const res = await API.post("/donations", payload);
+
       if (res.data.success) {
-        alert("Donation successful!");
-        setDonateForm({
-          ngo: "",
-          type: "money",
-          amount: "",
-          items: "",
-          paymentMethod: "online",
-        });
-        setActiveTab("history"); // Navigate to history to see it
+        alert("Item donation recorded!");
+        setActiveTab("history");
+        fetchDonations();
       }
     } catch (err) {
-      console.error("Donation failed:", err);
-      alert(err.response?.data?.message || "Donation failed");
+      console.error(err);
     }
-  };
-
+  }
+};
+      
   const menuItems = [
     { id: "profile", label: "Profile", icon: "👤" },
     { id: "directory", label: "NGO Directory", icon: "🏢" },

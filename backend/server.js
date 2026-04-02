@@ -127,6 +127,7 @@ app.use("/api/applications", require("./routes/applicationRoutes"));
 app.use("/api/donations", donationRoutes);
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/admin", adminRoutes)
+app.use("/api/payment", require("./routes/paymentRoutes"));
 
 app.get("/", (req, res) => {
   res.send("NGOConnect Backend Running");
