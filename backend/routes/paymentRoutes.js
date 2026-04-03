@@ -18,6 +18,7 @@ router.post(
   authMiddleware,
   roleMiddleware("donor"),
   async (req, res) => {
+    console.log("🔥 API HIT");
     try {
       const { amount } = req.body;
 

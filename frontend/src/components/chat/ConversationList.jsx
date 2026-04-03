@@ -66,7 +66,7 @@ const ConversationList = ({ onSelectChat, unreadCounts = {} }) => {
       {selectedNgo && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <h2 className="modal-title">{selectedNgo.name}</h2>
+            <h2 className="modal-title">{selectedNgo.ngoDetails.organizationName}</h2>
 
             <p className="modal-location">
               📍 {selectedNgo.ngoDetails?.location || "Not specified"}

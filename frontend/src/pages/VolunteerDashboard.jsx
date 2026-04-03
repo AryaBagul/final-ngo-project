@@ -257,11 +257,56 @@ useEffect(() => {
                   <div key={ngo._id} className="horizontal-card">
                     <div className="card-info">
                       <h3>{ngo.name}</h3>
+<<<<<<< HEAD
 <p>✉️ {ngo.email}</p>
 
 <p>🏢 {ngo.ngoDetails?.organizationName || "Not provided"}</p>
 <p>📍 {ngo.ngoDetails?.location || "Not provided"}</p>
 <p>{ngo.ngoDetails?.description || "No description"}</p>
+=======
+                      <p className="meta-text">✉️ {ngo.email}</p>
+                      {ngo.ngoDetails && (
+  <div style={{ marginTop: "8px" }}>
+    
+    {ngo.ngoDetails.website && (
+      <p>
+        🌐{" "}
+        <a href={ngo.ngoDetails.website} target="_blank" rel="noreferrer">
+          Visit Website
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.instagram && (
+      <p>
+        📸{" "}
+        <a href={ngo.ngoDetails.instagram} target="_blank" rel="noreferrer">
+          Instagram
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.facebook && (
+      <p>
+        📘{" "}
+        <a href={ngo.ngoDetails.facebook} target="_blank" rel="noreferrer">
+          Facebook
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.linkedin && (
+      <p>
+        💼{" "}
+        <a href={ngo.ngoDetails.linkedin} target="_blank" rel="noreferrer">
+          LinkedIn
+        </a>
+      </p>
+    )}
+
+  </div>
+)}
+>>>>>>> 6d7293f231a03b4599088953ed5f14e6183955d8
                     </div>
                   </div>
                 ))}
