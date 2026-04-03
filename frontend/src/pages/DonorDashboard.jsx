@@ -283,6 +283,53 @@ function DonorDashboard() {
                         </p>
                       )}
                       {ngo.ngoDetails?.description && <p className="desc-text">{ngo.ngoDetails.description}</p>}
+                      {/* 🔥 ADD THIS BLOCK */}
+
+
+
+{ngo.ngoDetails && (
+  <div style={{ marginTop: "8px" }}>
+    
+    {ngo.ngoDetails.website && (
+      <p>
+        🌐{" "}
+        <a href={ngo.ngoDetails.website} target="_blank" rel="noreferrer">
+          {ngo.ngoDetails.website}
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.instagram && (
+      <p>
+        📸{" "}
+        <a href={ngo.ngoDetails.instagram} target="_blank" rel="noreferrer">
+          Instagram
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.facebook && (
+      <p>
+        📘{" "}
+        <a href={ngo.ngoDetails.facebook} target="_blank" rel="noreferrer">
+          Facebook
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.linkedin && (
+      <p>
+        💼{" "}
+        <a href={ngo.ngoDetails.linkedin} target="_blank" rel="noreferrer">
+          LinkedIn
+        </a>
+      </p>
+    )}
+
+  </div>
+)}
+
+
                     </div>
                     <button className="green-btn" onClick={() => {
                         setDonateForm({ ...donateForm, ngo: ngo._id });

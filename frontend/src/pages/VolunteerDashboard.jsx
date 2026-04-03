@@ -64,7 +64,12 @@ function VolunteerDashboard() {
     if (ev.ngo && ev.ngo._id) {
       const existing = acc.find((n) => n._id === ev.ngo._id);
       if (!existing) {
-        acc.push({ _id: ev.ngo._id, name: ev.ngo.name, email: ev.ngo.email });
+        acc.push({
+  _id: ev.ngo._id,
+  name: ev.ngo.name,
+  email: ev.ngo.email,
+  ngoDetails: ev.ngo.ngoDetails, // 🔥 REQUIRED
+});
       }
     }
     return acc;
@@ -218,6 +223,47 @@ function VolunteerDashboard() {
                     <div className="card-info">
                       <h3>{ngo.name}</h3>
                       <p className="meta-text">✉️ {ngo.email}</p>
+                      {ngo.ngoDetails && (
+  <div style={{ marginTop: "8px" }}>
+    
+    {ngo.ngoDetails.website && (
+      <p>
+        🌐{" "}
+        <a href={ngo.ngoDetails.website} target="_blank" rel="noreferrer">
+          Visit Website
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.instagram && (
+      <p>
+        📸{" "}
+        <a href={ngo.ngoDetails.instagram} target="_blank" rel="noreferrer">
+          Instagram
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.facebook && (
+      <p>
+        📘{" "}
+        <a href={ngo.ngoDetails.facebook} target="_blank" rel="noreferrer">
+          Facebook
+        </a>
+      </p>
+    )}
+
+    {ngo.ngoDetails.linkedin && (
+      <p>
+        💼{" "}
+        <a href={ngo.ngoDetails.linkedin} target="_blank" rel="noreferrer">
+          LinkedIn
+        </a>
+      </p>
+    )}
+
+  </div>
+)}
                     </div>
                   </div>
                 ))}
