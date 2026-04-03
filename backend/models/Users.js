@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
       organizationName: String,
       description: String,
       location: String,
+      website: String,
+      instagram: String,
+      facebook: String,
+      linkedin: String
     },
   },
   { timestamps: true }

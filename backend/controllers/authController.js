@@ -1,3 +1,4 @@
+
 const User = require("../models/Users.js");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -48,9 +49,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    // Role Validation
-   
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
@@ -90,3 +88,46 @@ exports.getNGOs = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// UPDATE NGO LINKS
+exports.updateLinks = async (req, res) => {
+  try {
+    // ✅ supports both protected route and manual userId
+    const userId = req.user?.id || req.body.userId;
+
+    const { website, instagram, facebook, linkedin } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID missing" });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ensure ngoDetails exists
+    if (!user.ngoDetails) {
+      user.ngoDetails = {};
+    }
+
+    // update fields
+    user.ngoDetails.website = website || "";
+    user.ngoDetails.instagram = instagram || "";
+    user.ngoDetails.facebook = facebook || "";
+    user.ngoDetails.linkedin = linkedin || "";
+
+    await user.save();
+
+    res.json({
+      success: true,
+      user
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+

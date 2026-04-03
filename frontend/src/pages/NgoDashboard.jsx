@@ -5,6 +5,21 @@ import ChatContainer from "../components/chat/ChatContainer";
 function NgoDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
+  const [showLinkForm, setShowLinkForm] = useState(false);
+
+const [formLinks, setFormLinks] = useState({
+  website: "",
+  instagram: "",
+  facebook: "",
+  linkedin: ""
+});
+
+const [socialLinks, setSocialLinks] = useState({
+  website: "",
+  instagram: "",
+  facebook: "",
+  linkedin: ""
+});
 
   // Profile info from localStorage
   const userName = localStorage.getItem("userName") || "NGO";
@@ -147,11 +162,21 @@ function NgoDashboard() {
   };
 
   // Load data when tab changes
-  useEffect(() => {
-    if (activeTab === "calendar") fetchEvents();
-    if (activeTab === "needs") fetchNeeds();
-    if (activeTab === "applications") fetchEvents();
-  }, [activeTab]);
+useEffect(() => {
+  try {
+    const storedNgo = localStorage.getItem("ngoDetails");
+    if (storedNgo) {
+      const parsed = JSON.parse(storedNgo);
+      setSocialLinks(parsed);
+      setFormLinks(parsed);
+    }
+  } catch (e) {}
+
+  if (activeTab === "calendar") fetchEvents();
+  if (activeTab === "needs") fetchNeeds();
+  if (activeTab === "applications") fetchEvents();
+}, [activeTab]);
+  
 
   const menuItems = [
     { id: "profile", label: "Profile", icon: "👤" },
@@ -160,6 +185,23 @@ function NgoDashboard() {
     { id: "needs", label: "Urgent Needs", icon: "❗" },
     { id: "chat", label: "Connect with NGOs", icon: "💬" }, // ✅ ADD THIS
   ];
+  const handleSaveLinks = async () => {
+  try {
+    const res = await API.put("/auth/update-links", {
+      ...formLinks,
+      userId: localStorage.getItem("userId")
+    });
+
+    const updatedUser = res.data.user;
+
+    setSocialLinks(updatedUser.ngoDetails);
+    localStorage.setItem("ngoDetails", JSON.stringify(updatedUser.ngoDetails));
+
+    setShowLinkForm(false);
+  } catch (err) {
+    console.error(err);
+  }
+};
   return (
     <div className="dashboard-wrapper">
       {/* LEFT SIDEBAR PANEL */}
@@ -197,9 +239,49 @@ function NgoDashboard() {
           {/* ── PROFILE TAB ─────────────────────────────── */}
           {activeTab === "profile" && (
             <div className="profile-section">
-              <div className="section-header">
-                <h2>NGO Profile</h2>
-              </div>
+              {showLinkForm && (
+  <div className="ngo-links-modal-overlay">
+    <div className="ngo-links-modal-box">
+
+      <h3>Add Social Links</h3>
+
+      <input placeholder="Website" value={formLinks.website}
+        onChange={(e) => setFormLinks({ ...formLinks, website: e.target.value })} />
+
+      <input placeholder="Instagram" value={formLinks.instagram}
+        onChange={(e) => setFormLinks({ ...formLinks, instagram: e.target.value })} />
+
+      <input placeholder="Facebook" value={formLinks.facebook}
+        onChange={(e) => setFormLinks({ ...formLinks, facebook: e.target.value })} />
+
+      <input placeholder="LinkedIn" value={formLinks.linkedin}
+        onChange={(e) => setFormLinks({ ...formLinks, linkedin: e.target.value })} />
+
+      <div style={{ marginTop: "10px" }}>
+        <button onClick={handleSaveLinks}>Save</button>
+        <button onClick={() => setShowLinkForm(false)}>Cancel</button>
+      </div>
+
+    </div>
+  </div>
+)}
+              <div className="section-header" style={{ display: "flex", justifyContent: "space-between" }}>
+  <h2>NGO Profile</h2>
+
+  <button
+    onClick={() => setShowLinkForm(true)}
+    style={{
+      padding: "6px 12px",
+      backgroundColor: "#4C7A7A",
+      color: "white",
+      border: "none",
+      borderRadius: "6px",
+      cursor: "pointer"
+    }}
+  >
+    Add Links
+  </button>
+</div>
               <div className="profile-grid">
                 <div className="info-item">
                   <label>🏢 NGO Name</label>
@@ -239,8 +321,30 @@ function NgoDashboard() {
                   <label>✅ Status</label>
                   <p style={{ color: '#4C7A7A' }}>Active</p>
                 </div>
+                {(socialLinks.website || socialLinks.instagram || socialLinks.facebook || socialLinks.linkedin) && (
+  <div className="info-item-wide">
+    <label>🌐 Social Links</label>
+
+    {socialLinks.website && (
+      <p>🌐 <a href={socialLinks.website} target="_blank" rel="noreferrer">Website</a></p>
+    )}
+
+    {socialLinks.instagram && (
+      <p>📸 <a href={socialLinks.instagram} target="_blank">Instagram</a></p>
+    )}
+
+    {socialLinks.facebook && (
+      <p>📘 <a href={socialLinks.facebook} target="_blank"  rel="noreferrer">Facebook</a></p>
+    )}
+
+    {socialLinks.linkedin && (
+      <p>💼 <a href={socialLinks.linkedin} target="_blank">LinkedIn</a></p>
+    )}
+  </div>
+)}
               </div>
             </div>
+            
           )}
 
           {/* ── EVENT CALENDAR TAB ──────────────────────── */}
