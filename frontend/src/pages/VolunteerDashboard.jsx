@@ -5,7 +5,7 @@ import API from "../api/axios";
 function VolunteerDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
-
+  
   const userName = localStorage.getItem("userName") || "Volunteer";
   const userEmail = localStorage.getItem("userEmail") || "";
   const initials = userName.slice(0, 2).toUpperCase();
@@ -17,6 +17,7 @@ function VolunteerDashboard() {
 
   // ── Events State ──────────────────────────────────────
   const [events, setEvents] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState("");
   const [applyingId, setApplyingId] = useState(null); // which event is being applied to
@@ -40,31 +41,47 @@ function VolunteerDashboard() {
       setEventsLoading(false);
     }
   };
-
+const fetchApplications = async () => {
+  try {
+    const res = await API.get("/applications/my");
+    setApplications(res.data);
+  } catch (err) {
+    console.error("Failed to fetch applications");
+  }
+};
   // ── Apply to an Event ─────────────────────────────────
   const handleApply = async (eventId) => {
-    setApplyingId(eventId);
-    try {
-      await API.post(`/applications/apply/${eventId}`);
-      setAppliedIds((prev) => new Set([...prev, eventId]));
-      alert("Application submitted successfully!");
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to apply");
-    } finally {
-      setApplyingId(null);
-    }
-  };
+  setApplyingId(eventId);
+  try {
+    await API.post(`/applications/apply/${eventId}`);
 
+    alert("Application submitted successfully!");
+
+    fetchApplications(); // ✅ fetch real data from DB
+
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to apply");
+  } finally {
+    setApplyingId(null);
+  }
+};
   useEffect(() => {
     if (activeTab === "calendar" || activeTab === "directory") fetchEvents();
   }, [activeTab]);
-
+useEffect(() => {
+  fetchApplications();
+}, []);
   // ── Derive unique NGOs from events list ───────────────
   const ngoDirectory = events.reduce((acc, ev) => {
     if (ev.ngo && ev.ngo._id) {
       const existing = acc.find((n) => n._id === ev.ngo._id);
       if (!existing) {
-        acc.push({ _id: ev.ngo._id, name: ev.ngo.name, email: ev.ngo.email });
+        acc.push({
+  _id: ev.ngo._id,
+  name: ev.ngo.name,
+  email: ev.ngo.email,
+  ngoDetails: ev.ngo.ngoDetails, // ✅ ADD THIS
+});
       }
     }
     return acc;
@@ -165,7 +182,11 @@ function VolunteerDashboard() {
 
               <div className="list-container">
                 {events.map((ev) => {
-                  const alreadyApplied = appliedIds.has(ev._id);
+  const application = applications.find(
+  (app) => app?.event?._id === ev._id
+);
+
+  const alreadyApplied = !!application;
                   return (
                     <div key={ev._id} className="horizontal-card">
                       <div className="card-info">
@@ -180,18 +201,37 @@ function VolunteerDashboard() {
                           <p className="meta-text">🏷️ {ev.skillsRequired.join(", ")}</p>
                         )}
                       </div>
-                      <button
-                        className="blue-btn"
-                        disabled={alreadyApplied || applyingId === ev._id}
-                        onClick={() => handleApply(ev._id)}
-                        style={{
-                          opacity: alreadyApplied ? 0.6 : 1,
-                          cursor: alreadyApplied ? 'default' : 'pointer',
-                          flexShrink: 0
-                        }}
-                      >
-                        {alreadyApplied ? "✓ Applied" : applyingId === ev._id ? "Applying..." : "Apply"}
-                      </button>
+                      {application ? (
+  <span
+    style={{
+      fontWeight: "bold",
+      padding: "8px 14px",
+      borderRadius: "8px",
+      backgroundColor:
+        application.status === "approved"
+          ? "#d4edda"
+          : application.status === "rejected"
+          ? "#f8d7da"
+          : "#fff3cd",
+      color:
+        application.status === "approved"
+          ? "green"
+          : application.status === "rejected"
+          ? "red"
+          : "orange",
+    }}
+  >
+    {application.status.toUpperCase()}
+  </span>
+) : (
+  <button
+    className="blue-btn"
+    disabled={applyingId === ev._id}
+    onClick={() => handleApply(ev._id)}
+  >
+    {applyingId === ev._id ? "Applying..." : "Apply"}
+  </button>
+)}
                     </div>
                   );
                 })}
@@ -217,7 +257,11 @@ function VolunteerDashboard() {
                   <div key={ngo._id} className="horizontal-card">
                     <div className="card-info">
                       <h3>{ngo.name}</h3>
-                      <p className="meta-text">✉️ {ngo.email}</p>
+<p>✉️ {ngo.email}</p>
+
+<p>🏢 {ngo.ngoDetails?.organizationName || "Not provided"}</p>
+<p>📍 {ngo.ngoDetails?.location || "Not provided"}</p>
+<p>{ngo.ngoDetails?.description || "No description"}</p>
                     </div>
                   </div>
                 ))}

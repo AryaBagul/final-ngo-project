@@ -74,4 +74,22 @@ router.put("/:applicationId", authMiddleware, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// Volunteer - Get My Applications
+router.get("/my", authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== "volunteer") {
+      return res.status(403).json({ message: "Only volunteers allowed" });
+    }
+
+    const applications = await Application.find({
+      volunteer: req.user.id,
+    })
+      .populate("event", "title date location")
+      .populate("event.ngo", "name");
+
+    res.json(applications);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 module.exports = router;
