@@ -6,7 +6,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 // Volunteer Apply
 router.post("/apply/:eventId", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role !== "volunteer") {
+    if (req.user.role.toLowerCase() !== "volunteer") {
       return res.status(403).json({ message: "Only volunteers can apply" });
     }
 
@@ -77,7 +77,7 @@ router.put("/:applicationId", authMiddleware, async (req, res) => {
 // Volunteer - Get My Applications
 router.get("/my", authMiddleware, async (req, res) => {
   try {
-    if (req.user.role !== "volunteer") {
+    if (req.user.role.toLowerCase() !== "volunteer") {
       return res.status(403).json({ message: "Only volunteers allowed" });
     }
 

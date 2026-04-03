@@ -5,11 +5,11 @@ import API from "../api/axios";
 function VolunteerDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
-  
+
   const userName = localStorage.getItem("userName") || "Volunteer";
   const userEmail = localStorage.getItem("userEmail") || "";
   const initials = userName.slice(0, 2).toUpperCase();
-  
+
   const userContact = localStorage.getItem("contactNumber") || "Not provided";
   const userAddress = localStorage.getItem("address") || "Not provided";
   const rawBirthdate = localStorage.getItem("birthdate");
@@ -41,47 +41,47 @@ function VolunteerDashboard() {
       setEventsLoading(false);
     }
   };
-const fetchApplications = async () => {
-  try {
-    const res = await API.get("/applications/my");
-    setApplications(res.data);
-  } catch (err) {
-    console.error("Failed to fetch applications");
-  }
-};
+  const fetchApplications = async () => {
+    try {
+      const res = await API.get("/applications/my");
+      setApplications(res.data);
+    } catch (err) {
+      console.error("Failed to fetch applications");
+    }
+  };
   // ── Apply to an Event ─────────────────────────────────
   const handleApply = async (eventId) => {
-  setApplyingId(eventId);
-  try {
-    await API.post(`/applications/apply/${eventId}`);
+    setApplyingId(eventId);
+    try {
+      await API.post(`/applications/apply/${eventId}`);
 
-    alert("Application submitted successfully!");
+      alert("Application submitted successfully!");
 
-    fetchApplications(); // ✅ fetch real data from DB
+      fetchApplications(); // ✅ fetch real data from DB
 
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to apply");
-  } finally {
-    setApplyingId(null);
-  }
-};
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to apply");
+    } finally {
+      setApplyingId(null);
+    }
+  };
   useEffect(() => {
     if (activeTab === "calendar" || activeTab === "directory") fetchEvents();
   }, [activeTab]);
-useEffect(() => {
-  fetchApplications();
-}, []);
+  useEffect(() => {
+    fetchApplications();
+  }, []);
   // ── Derive unique NGOs from events list ───────────────
   const ngoDirectory = events.reduce((acc, ev) => {
     if (ev.ngo && ev.ngo._id) {
       const existing = acc.find((n) => n._id === ev.ngo._id);
       if (!existing) {
         acc.push({
-  _id: ev.ngo._id,
-  name: ev.ngo.name,
-  email: ev.ngo.email,
-  ngoDetails: ev.ngo.ngoDetails, // ✅ ADD THIS
-});
+          _id: ev.ngo._id,
+          name: ev.ngo.name,
+          email: ev.ngo.email,
+          ngoDetails: ev.ngo.ngoDetails, // ✅ ADD THIS
+        });
       }
     }
     return acc;
@@ -182,11 +182,11 @@ useEffect(() => {
 
               <div className="list-container">
                 {events.map((ev) => {
-  const application = applications.find(
-  (app) => app?.event?._id === ev._id
-);
+                  const application = applications.find(
+                    (app) => app?.event?._id === ev._id
+                  );
 
-  const alreadyApplied = !!application;
+                  const alreadyApplied = !!application;
                   return (
                     <div key={ev._id} className="horizontal-card">
                       <div className="card-info">
@@ -202,36 +202,36 @@ useEffect(() => {
                         )}
                       </div>
                       {application ? (
-  <span
-    style={{
-      fontWeight: "bold",
-      padding: "8px 14px",
-      borderRadius: "8px",
-      backgroundColor:
-        application.status === "approved"
-          ? "#d4edda"
-          : application.status === "rejected"
-          ? "#f8d7da"
-          : "#fff3cd",
-      color:
-        application.status === "approved"
-          ? "green"
-          : application.status === "rejected"
-          ? "red"
-          : "orange",
-    }}
-  >
-    {application.status.toUpperCase()}
-  </span>
-) : (
-  <button
-    className="blue-btn"
-    disabled={applyingId === ev._id}
-    onClick={() => handleApply(ev._id)}
-  >
-    {applyingId === ev._id ? "Applying..." : "Apply"}
-  </button>
-)}
+                        <span
+                          style={{
+                            fontWeight: "bold",
+                            padding: "8px 14px",
+                            borderRadius: "8px",
+                            backgroundColor:
+                              application.status === "approved"
+                                ? "#d4edda"
+                                : application.status === "rejected"
+                                  ? "#f8d7da"
+                                  : "#fff3cd",
+                            color:
+                              application.status === "approved"
+                                ? "green"
+                                : application.status === "rejected"
+                                  ? "red"
+                                  : "orange",
+                          }}
+                        >
+                          {application.status.toUpperCase()}
+                        </span>
+                      ) : (
+                        <button
+                          className="blue-btn"
+                          disabled={applyingId === ev._id}
+                          onClick={() => handleApply(ev._id)}
+                        >
+                          {applyingId === ev._id ? "Applying..." : "Apply"}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -257,63 +257,67 @@ useEffect(() => {
                   <div key={ngo._id} className="horizontal-card">
                     <div className="card-info">
                       <h3>{ngo.name}</h3>
-<<<<<<< HEAD
-<p>✉️ {ngo.email}</p>
-
-<p>🏢 {ngo.ngoDetails?.organizationName || "Not provided"}</p>
-<p>📍 {ngo.ngoDetails?.location || "Not provided"}</p>
-<p>{ngo.ngoDetails?.description || "No description"}</p>
-=======
                       <p className="meta-text">✉️ {ngo.email}</p>
+                      {/* 1. Organization & Location */}
                       {ngo.ngoDetails && (
-  <div style={{ marginTop: "8px" }}>
-    
-    {ngo.ngoDetails.website && (
-      <p>
-        🌐{" "}
-        <a href={ngo.ngoDetails.website} target="_blank" rel="noreferrer">
-          Visit Website
-        </a>
-      </p>
-    )}
+                        <p className="meta-text">
+                          {ngo.ngoDetails.organizationName && `🏢 ${ngo.ngoDetails.organizationName} `}
+                          {ngo.ngoDetails.location && `📍 ${ngo.ngoDetails.location}`}
+                        </p>
+                      )}
 
-    {ngo.ngoDetails.instagram && (
-      <p>
-        📸{" "}
-        <a href={ngo.ngoDetails.instagram} target="_blank" rel="noreferrer">
-          Instagram
-        </a>
-      </p>
-    )}
+                      {/* 2. Description */}
+                      {ngo.ngoDetails?.description && (
+                        <p className="desc-text">{ngo.ngoDetails.description}</p>
+                      )}
 
-    {ngo.ngoDetails.facebook && (
-      <p>
-        📘{" "}
-        <a href={ngo.ngoDetails.facebook} target="_blank" rel="noreferrer">
-          Facebook
-        </a>
-      </p>
-    )}
+                      {/* 3. Social Links */}
+                      {ngo.ngoDetails && (
+                        <div style={{ marginTop: "8px" }}>
+                          {ngo.ngoDetails.website && (
+                            <p>
+                              🌐{" "}
+                              <a href={ngo.ngoDetails.website} target="_blank" rel="noreferrer">
+                                {ngo.ngoDetails.website}
+                              </a>
+                            </p>
+                          )}
 
-    {ngo.ngoDetails.linkedin && (
-      <p>
-        💼{" "}
-        <a href={ngo.ngoDetails.linkedin} target="_blank" rel="noreferrer">
-          LinkedIn
-        </a>
-      </p>
-    )}
+                          {ngo.ngoDetails.instagram && (
+                            <p>
+                              📸{" "}
+                              <a href={ngo.ngoDetails.instagram} target="_blank" rel="noreferrer">
+                                Instagram
+                              </a>
+                            </p>
+                          )}
 
-  </div>
-)}
->>>>>>> 6d7293f231a03b4599088953ed5f14e6183955d8
+                          {ngo.ngoDetails.facebook && (
+                            <p>
+                              📘{" "}
+                              <a href={ngo.ngoDetails.facebook} target="_blank" rel="noreferrer">
+                                Facebook
+                              </a>
+                            </p>
+                          )}
+
+                          {/* (End of LinkedIn link) */}
+                          {ngo.ngoDetails.linkedin && (
+                            <p>
+                              💼{" "}
+                              <a href={ngo.ngoDetails.linkedin} target="_blank" rel="noreferrer">
+                                LinkedIn
+                              </a>
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           )}
-
         </div>
       </div>
     </div>
@@ -321,3 +325,4 @@ useEffect(() => {
 }
 
 export default VolunteerDashboard;
+

@@ -79,9 +79,8 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 router.get("/", authMiddleware, async (req, res) => {
   try {
     const events = await Event.find()
-      .populate("ngo", "name email")
+      .populate("ngo", "name email ngoDetails")
       .sort({ date: 1 });
-
     res.json(events);
   } catch (error) {
     res.status(500).json({ message: error.message });
