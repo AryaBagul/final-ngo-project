@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 import ChatContainer from "../components/chat/ChatContainer"; 
@@ -6,7 +7,7 @@ function NgoDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [showLinkForm, setShowLinkForm] = useState(false);
-
+  const [donations, setDonations] = useState([]);
 const [formLinks, setFormLinks] = useState({
   website: "",
   instagram: "",
@@ -55,7 +56,7 @@ const [socialLinks, setSocialLinks] = useState({
   const [applications, setApplications] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [appsLoading, setAppsLoading] = useState(false);
-
+ 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
@@ -175,6 +176,7 @@ useEffect(() => {
   if (activeTab === "calendar") fetchEvents();
   if (activeTab === "needs") fetchNeeds();
   if (activeTab === "applications") fetchEvents();
+  if (activeTab === "donations") fetchDonations();
 }, [activeTab]);
   
 
@@ -183,7 +185,9 @@ useEffect(() => {
     { id: "calendar", label: "Event Calendar", icon: "📅" },
     { id: "applications", label: "Applications", icon: "📋" },
     { id: "needs", label: "Urgent Needs", icon: "❗" },
+    { id: "donations", label: "Donations", icon: "💰" },
     { id: "chat", label: "Connect with NGOs", icon: "💬" }, // ✅ ADD THIS
+    
   ];
   const handleSaveLinks = async () => {
   try {
@@ -200,6 +204,20 @@ useEffect(() => {
     setShowLinkForm(false);
   } catch (err) {
     console.error(err);
+  }
+};
+
+const fetchDonations = async () => {
+  try {
+    const ngoId = localStorage.getItem("userId");
+
+    const res = await API.get(`/donations/ngo/${ngoId}`);
+
+    if (res.data.success) {
+      setDonations(res.data.donations);
+    }
+  } catch (err) {
+    console.error("Failed to fetch NGO donations", err);
   }
 };
   return (
@@ -540,10 +558,89 @@ useEffect(() => {
                       <p className="meta-text">📍 {need.location}</p>
                     </div>
                   </div>
+                  
                 ))}
+                
               </div>
             </div>
           )}
+          {activeTab === "donations" && (
+  <div>
+    <div className="section-header">
+      <h2>Received Donations</h2>
+    </div>
+
+    <div className="list-container">
+      {donations.length > 0 ? (
+        donations.map((d) => (
+          <div key={d._id} className="horizontal-card">
+            <div className="card-info">
+              
+              <h3>{d.donor?.name || "Unknown Donor"}</h3>
+
+              <p className="meta-text">
+                {d.type === "money"
+                  ? `💰 ₹${d.amount}`
+                  : `📦 ${d.items}`}
+              </p>
+
+              <p className="meta-text">
+                📅 {new Date(d.createdAt).toLocaleDateString()}
+              </p>
+
+              <p className="meta-text">
+                Status:{" "}
+                <span style={{
+                  color: d.status === "completed" ? "green" : "orange",
+                  fontWeight: "bold"
+                }}>
+                  {d.status}
+                </span>
+              </p>
+            </div>
+
+            {/* OPTIONAL: update status */}
+   {d.status !== "completed" ? (
+  <button
+    onClick={async () => {
+      try {
+        await API.put(
+          `/donations/${d._id}/status`,
+          { status: "completed" },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        fetchDonations();
+      } catch (err) {
+        console.error(err);
+      }
+    }}
+    className="green-btn"
+  >
+    Mark Completed
+  </button>
+) : (
+  <button
+    className="green-btn"
+    style={{ backgroundColor: "#ccc", cursor: "not-allowed" }}
+    disabled
+  >
+    Completed
+  </button>
+)}
+
+          </div>
+        ))
+      ) : (
+        <p>No donations received yet.</p>
+      )}
+    </div>
+  </div>
+)}
 
         </div>
       </div>

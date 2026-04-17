@@ -68,7 +68,7 @@ function VolunteerDashboard() {
   useEffect(() => {
     if (activeTab === "calendar" || activeTab === "directory") fetchEvents();
   }, [activeTab]);
-  useEffect(() => {
+  useEffect(() => { 
     fetchApplications();
   }, []);
   // ── Derive unique NGOs from events list ───────────────
