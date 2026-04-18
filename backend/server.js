@@ -13,7 +13,7 @@ const connectDB = require("./config/db");
 const Message = require("./models/Message");
 const adminRoutes = require("./routes/adminRoutes");
 
-
+const notificationRoutes = require("./routes/notificationRoutes");
 
 
 const server = http.createServer(app);
@@ -130,6 +130,7 @@ app.use("/api/donations", donationRoutes);
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/admin", adminRoutes)
 app.use("/api/payment", require("./routes/paymentRoutes"));
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.send("NGOConnect Backend Running");

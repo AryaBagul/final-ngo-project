@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
 
 function VolunteerDashboard() {
+  const [notifications, setNotifications] = useState([]);
+const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -71,6 +73,35 @@ function VolunteerDashboard() {
   useEffect(() => { 
     fetchApplications();
   }, []);
+   useEffect(() => {
+  fetchNotifications();
+}, []);
+useEffect(() => {
+  const handleClickOutside = () => {
+    setShowDropdown(false);
+  };
+
+  document.addEventListener("click", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("click", handleClickOutside);
+  };
+}, []);
+  const fetchNotifications = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/notifications", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    const data = await res.json();
+    setNotifications(data);
+  } catch (err) {
+    console.error(err);
+  }
+ 
+};
   // ── Derive unique NGOs from events list ───────────────
   const ngoDirectory = events.reduce((acc, ev) => {
     if (ev.ngo && ev.ngo._id) {
@@ -92,7 +123,27 @@ function VolunteerDashboard() {
     { id: "calendar", label: "Event Calendar", icon: "📅" },
     { id: "directory", label: "NGO Directory", icon: "🏢" },
   ];
+const markAsRead = async (id) => {
+  try {
+    await fetch(`http://localhost:5000/api/notifications/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n._id === id ? { ...n, isRead: true } : n
+      )
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
+const unreadCount = (notifications || []).filter(function(n) {
+  return !n.isRead;
+}).length;
   return (
     <div className="dashboard-wrapper">
       {/* BLUE SIDEBAR */}
@@ -120,10 +171,86 @@ function VolunteerDashboard() {
 
       {/* MAIN CONTENT */}
       <div className="main-content">
-        <header className="content-header">
-          <h1>Volunteer Dashboard</h1>
-          <div className="user-avatar-circle volunteer-avatar">{initials}</div>
-        </header>
+        <header className="content-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+
+  <h1>Volunteer Dashboard</h1>
+
+  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+
+    <div
+  onClick={(e) => {
+    e.stopPropagation();
+    setShowDropdown(prev => !prev);
+  }}
+  style={{ position: "relative", cursor: "pointer", fontSize: "20px" }}
+>
+  🔔 {unreadCount}
+      {showDropdown && (
+  <div
+    style={{
+      position: "absolute",
+      right: 0,
+      top: "30px",
+      width: "280px",
+      background: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+      zIndex: 1000
+    }}
+  >
+    {notifications.length === 0 ? (
+      <p style={{ padding: "10px" }}>No notifications</p>
+    ) : (
+      notifications.map((n) => (
+        <div
+          key={n._id}
+          onClick={(e) => {
+            e.stopPropagation();
+            markAsRead(n._id);
+            setShowDropdown(false);
+
+            if (n.referenceId?._id) {
+              navigate(`/urgent-need/${n.referenceId._id}`);
+            }
+          }}
+          style={{
+            padding: "10px",
+            borderBottom: "1px solid #eee",
+            background: n.isRead ? "#f9f9f9" : "#e6f7ff",
+            cursor: "pointer"
+          }}
+        >
+          {n.message}
+        </div>
+      ))
+    )}
+
+    {/* ✅ VIEW ALL BUTTON */}
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowDropdown(false);
+        navigate("/notifications");
+      }}
+      style={{
+        padding: "10px",
+        textAlign: "center",
+        cursor: "pointer",
+        fontWeight: "bold",
+        borderTop: "1px solid #eee"
+      }}
+    >
+      View All Notifications
+    </div>
+  </div>
+)}
+    </div>
+
+    <div className="user-avatar-circle volunteer-avatar">{initials}</div>
+
+  </div>
+</header>
 
         <div className="dashboard-card">
 

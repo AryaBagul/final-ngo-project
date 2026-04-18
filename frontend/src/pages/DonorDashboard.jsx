@@ -7,6 +7,8 @@ function DonorDashboard() {
   const [activeTab, setActiveTab] = useState("profile");
 
   // State
+  const [notifications, setNotifications] = useState([]);
+const [showDropdown, setShowDropdown] = useState(false);
   const [ngos, setNgos] = useState([]);
   const [donations, setDonations] = useState([]);
   const [donateForm, setDonateForm] = useState({
@@ -31,11 +33,22 @@ function DonorDashboard() {
     return name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : "SJ";
   };
 
-  useEffect(() => {
-    fetchNGOs();
-    fetchDonations();
-  }, [activeTab]); // Refetch when tabs change to keep data fresh
+useEffect(() => {
+  fetchNGOs();
+  fetchDonations();
+  fetchNotifications();
+}, [activeTab]); // Refetch when tabs change to keep data fresh
+useEffect(() => {
+  const handleClickOutside = () => {
+    setShowDropdown(false);
+  };
 
+  document.addEventListener("click", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("click", handleClickOutside);
+  };
+}, []);
   const fetchNGOs = async () => {
     try {
       const res = await API.get("/auth/ngos");
@@ -181,11 +194,45 @@ function DonorDashboard() {
     { id: "donate", label: "Donate", icon: "💰" },
     { id: "history", label: "Donation History", icon: "🕒" },
   ];
+const fetchNotifications = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/notifications", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
+    const data = await res.json();
+    setNotifications(data);
+  } catch (err) {
+    console.error("Failed to fetch notifications", err);
+  }
+};
+const markAsRead = async (id) => {
+  try {
+    await fetch(`http://localhost:5000/api/notifications/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n._id === id ? { ...n, isRead: true } : n
+      )
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
   // Calculate total contributions
   const totalContributions = donations
     .filter(d => d.type === "money" && d.status === "completed")
     .reduce((sum, d) => sum + (d.amount || 0), 0);
+const unreadCount = (notifications || []).filter(function(n) {
+  return !n.isRead;
+}).length;
 
   return (
     <div className="dashboard-wrapper">
@@ -216,10 +263,91 @@ function DonorDashboard() {
 
       {/* MAIN CONTENT Area */}
       <div className="main-content">
-        <header className="content-header">
-          <h1>Donor Dashboard</h1>
-          <div className="user-avatar-circle donor-avatar">{getInitials(userName)}</div>
-        </header>
+         <header className="content-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+  
+  <h1>Donor Dashboard</h1>
+
+  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+
+    {/* 🔔 Notification Bell */}
+    <div
+      onClick={(e) => {
+  e.stopPropagation();
+  setShowDropdown(prev => !prev);
+}}
+      style={{ position: "relative", cursor: "pointer", fontSize: "20px" }}
+    >
+      🔔 {unreadCount}
+
+      {showDropdown && (
+  <div
+    style={{
+      position: "absolute",
+      right: 0,
+      top: "30px",
+      width: "280px",
+      background: "#fff",
+      border: "1px solid #ddd",
+      borderRadius: "8px",
+      boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+      zIndex: 1000
+    }}
+  >
+    {notifications.length === 0 ? (
+      <p style={{ padding: "10px" }}>No notifications</p>
+    ) : (
+      notifications.map((n) => (
+        <div
+          key={n._id}
+          onClick={(e) => {
+            e.stopPropagation();
+            markAsRead(n._id);
+            setShowDropdown(false);
+
+            if (n.referenceId?._id) {
+              navigate(`/urgent-need/${n.referenceId._id}`);
+            }
+          }}
+          style={{
+            padding: "10px",
+            borderBottom: "1px solid #eee",
+            background: n.isRead ? "#f9f9f9" : "#e6f7ff",
+            cursor: "pointer"
+          }}
+        >
+          {n.message}
+        </div>
+      ))
+    )}
+
+    {/* ✅ VIEW ALL BUTTON */}
+    <div
+      onClick={(e) => {
+        e.stopPropagation();
+        setShowDropdown(false);
+        navigate("/notifications");
+      }}
+      style={{
+        padding: "10px",
+        textAlign: "center",
+        cursor: "pointer",
+        fontWeight: "bold",
+        borderTop: "1px solid #eee"
+      }}
+    >
+      View All Notifications
+    </div>
+  </div>
+)}
+    </div>
+    
+    {/* Avatar */}
+    <div className="user-avatar-circle donor-avatar">
+      {getInitials(userName)}
+    </div>
+
+  </div>
+</header>
 
         <div className="dashboard-card">
           {activeTab === "profile" && (

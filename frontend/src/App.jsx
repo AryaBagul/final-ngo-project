@@ -5,6 +5,8 @@ import DonorDashboard from "./pages/DonorDashboard";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import NgoDashboard from "./pages/NgoDashboard";
 import PrivateRoute from "./utils/PrivateRoute";
+import UrgentNeedDetails from "./pages/UrgentNeedDetails";
+import NotificationsPage from "./pages/NotificationsPage";
 import AdminDashboard from "./pages/AdminDashboard";
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route path="/urgent-need/:id" element={<UrgentNeedDetails />} />
          <Route
       path="/admin"
       element={
@@ -39,7 +42,7 @@ function App() {
             </PrivateRoute>
           }
         />
-
+       <Route path="/notifications" element={<NotificationsPage />} />
         <Route
           path="/ngo-dashboard"
           element={

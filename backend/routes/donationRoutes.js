@@ -1,4 +1,5 @@
 const express = require("express");
+const sendEmail = require("../utils/sendEmail");
 const router = express.Router();
 const Donation = require("../models/Donation");
 const authMiddleware = require("../middleware/authMiddleware");
@@ -77,7 +78,7 @@ router.put(
             const { status } = req.body;
             const donationId = req.params.id;
 
-            const donation = await Donation.findById(donationId);
+            const donation = await Donation.findById(donationId).populate("donor");
 
             if (!donation) {
                 return res.status(404).json({ message: "Donation not found" });
@@ -97,6 +98,14 @@ router.put(
 
             donation.status = status;
             await donation.save();
+            // 📧 Send email ONLY when completed
+if (status === "completed") {
+    await sendEmail(
+        donation.donor.email,
+        "Donation Completed 🎉",
+        `Hello ${donation.donor.name}, your donation has been successfully completed by the NGO. Thank you for your support!`
+    );
+}
 
             res.json({
                 success: true,
