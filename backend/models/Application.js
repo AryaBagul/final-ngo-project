@@ -12,6 +12,10 @@ const applicationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    skills: {
+      type: String,
+      required: true,
+    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

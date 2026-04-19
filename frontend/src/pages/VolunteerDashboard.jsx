@@ -4,7 +4,7 @@ import API from "../api/axios";
 
 function VolunteerDashboard() {
   const [notifications, setNotifications] = useState([]);
-const [showDropdown, setShowDropdown] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
 
@@ -24,6 +24,9 @@ const [showDropdown, setShowDropdown] = useState(false);
   const [eventsError, setEventsError] = useState("");
   const [applyingId, setApplyingId] = useState(null); // which event is being applied to
   const [appliedIds, setAppliedIds] = useState(new Set()); // track applied events
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [skillsInput, setSkillsInput] = useState("");
+  const [applyingEventId, setApplyingEventId] = useState(null);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -52,56 +55,70 @@ const [showDropdown, setShowDropdown] = useState(false);
     }
   };
   // ── Apply to an Event ─────────────────────────────────
-  const handleApply = async (eventId) => {
-    setApplyingId(eventId);
+  // 1. Open the Modal instead of a prompt
+  const handleApply = (eventId) => {
+    setApplyingEventId(eventId);
+    setSkillsInput("");
+    setShowApplyModal(true);
+  };
+
+  // 2. The actual API call when clicking "Submit" inside the modal
+  const submitApplication = async () => {
+    if (!skillsInput.trim()) {
+      alert("Please enter your skills");
+      return;
+    }
+
+    setApplyingId(applyingEventId);
+    setShowApplyModal(false); // Close modal 
+
     try {
-      await API.post(`/applications/apply/${eventId}`);
-
+      await API.post(`/applications/apply/${applyingEventId}`, { skills: skillsInput });
       alert("Application submitted successfully!");
-
-      fetchApplications(); // ✅ fetch real data from DB
-
+      fetchApplications();
     } catch (err) {
       alert(err.response?.data?.message || "Failed to apply");
     } finally {
       setApplyingId(null);
+      setApplyingEventId(null);
     }
   };
+
   useEffect(() => {
     if (activeTab === "calendar" || activeTab === "directory") fetchEvents();
   }, [activeTab]);
-  useEffect(() => { 
+  useEffect(() => {
     fetchApplications();
   }, []);
-   useEffect(() => {
-  fetchNotifications();
-}, []);
-useEffect(() => {
-  const handleClickOutside = () => {
-    setShowDropdown(false);
-  };
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowDropdown(false);
+    };
 
-  document.addEventListener("click", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
 
-  return () => {
-    document.removeEventListener("click", handleClickOutside);
-  };
-}, []);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
   const fetchNotifications = async () => {
-  try {
-    const res = await fetch("http://localhost:5000/api/notifications", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/notifications", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-    const data = await res.json();
-    setNotifications(data);
-  } catch (err) {
-    console.error(err);
-  }
- 
-};
+      const data = await res.json();
+      setNotifications(data);
+    } catch (err) {
+      console.error(err);
+    }
+
+  };
   // ── Derive unique NGOs from events list ───────────────
   const ngoDirectory = events.reduce((acc, ev) => {
     if (ev.ngo && ev.ngo._id) {
@@ -123,27 +140,27 @@ useEffect(() => {
     { id: "calendar", label: "Event Calendar", icon: "📅" },
     { id: "directory", label: "NGO Directory", icon: "🏢" },
   ];
-const markAsRead = async (id) => {
-  try {
-    await fetch(`http://localhost:5000/api/notifications/${id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+  const markAsRead = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/api/notifications/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n._id === id ? { ...n, isRead: true } : n
-      )
-    );
-  } catch (err) {
-    console.error(err);
-  }
-};
-const unreadCount = (notifications || []).filter(function(n) {
-  return !n.isRead;
-}).length;
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === id ? { ...n, isRead: true } : n
+        )
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const unreadCount = (notifications || []).filter(function (n) {
+    return !n.isRead;
+  }).length;
   return (
     <div className="dashboard-wrapper">
       {/* BLUE SIDEBAR */}
@@ -173,84 +190,84 @@ const unreadCount = (notifications || []).filter(function(n) {
       <div className="main-content">
         <header className="content-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 
-  <h1>Volunteer Dashboard</h1>
+          <h1>Volunteer Dashboard</h1>
 
-  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
 
-    <div
-  onClick={(e) => {
-    e.stopPropagation();
-    setShowDropdown(prev => !prev);
-  }}
-  style={{ position: "relative", cursor: "pointer", fontSize: "20px" }}
->
-  🔔 {unreadCount}
-      {showDropdown && (
-  <div
-    style={{
-      position: "absolute",
-      right: 0,
-      top: "30px",
-      width: "280px",
-      background: "#fff",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
-      zIndex: 1000
-    }}
-  >
-    {notifications.length === 0 ? (
-      <p style={{ padding: "10px" }}>No notifications</p>
-    ) : (
-      notifications.map((n) => (
-        <div
-          key={n._id}
-          onClick={(e) => {
-            e.stopPropagation();
-            markAsRead(n._id);
-            setShowDropdown(false);
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDropdown(prev => !prev);
+              }}
+              style={{ position: "relative", cursor: "pointer", fontSize: "20px" }}
+            >
+              🔔 {unreadCount}
+              {showDropdown && (
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "30px",
+                    width: "280px",
+                    background: "#fff",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                    zIndex: 1000
+                  }}
+                >
+                  {notifications.length === 0 ? (
+                    <p style={{ padding: "10px" }}>No notifications</p>
+                  ) : (
+                    notifications.map((n) => (
+                      <div
+                        key={n._id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(n._id);
+                          setShowDropdown(false);
 
-            if (n.referenceId?._id) {
-              navigate(`/urgent-need/${n.referenceId._id}`);
-            }
-          }}
-          style={{
-            padding: "10px",
-            borderBottom: "1px solid #eee",
-            background: n.isRead ? "#f9f9f9" : "#e6f7ff",
-            cursor: "pointer"
-          }}
-        >
-          {n.message}
-        </div>
-      ))
-    )}
+                          if (n.referenceId?._id) {
+                            navigate(`/urgent-need/${n.referenceId._id}`);
+                          }
+                        }}
+                        style={{
+                          padding: "10px",
+                          borderBottom: "1px solid #eee",
+                          background: n.isRead ? "#f9f9f9" : "#e6f7ff",
+                          cursor: "pointer"
+                        }}
+                      >
+                        {n.message}
+                      </div>
+                    ))
+                  )}
 
-    {/* ✅ VIEW ALL BUTTON */}
-    <div
-      onClick={(e) => {
-        e.stopPropagation();
-        setShowDropdown(false);
-        navigate("/notifications");
-      }}
-      style={{
-        padding: "10px",
-        textAlign: "center",
-        cursor: "pointer",
-        fontWeight: "bold",
-        borderTop: "1px solid #eee"
-      }}
-    >
-      View All Notifications
-    </div>
-  </div>
-)}
-    </div>
+                  {/* ✅ VIEW ALL BUTTON */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDropdown(false);
+                      navigate("/notifications");
+                    }}
+                    style={{
+                      padding: "10px",
+                      textAlign: "center",
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      borderTop: "1px solid #eee"
+                    }}
+                  >
+                    View All Notifications
+                  </div>
+                </div>
+              )}
+            </div>
 
-    <div className="user-avatar-circle volunteer-avatar">{initials}</div>
+            <div className="user-avatar-circle volunteer-avatar">{initials}</div>
 
-  </div>
-</header>
+          </div>
+        </header>
 
         <div className="dashboard-card">
 
@@ -446,6 +463,54 @@ const unreadCount = (notifications || []).filter(function(n) {
             </div>
           )}
         </div>
+        {/* CUSTOM APPLY MODAL */}
+        {showApplyModal && (
+          <div style={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+            background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center",
+            alignItems: "center", zIndex: 2000
+          }}>
+            <div style={{
+              background: "white", padding: "30px", borderRadius: "15px",
+              width: "400px", boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
+            }}>
+              <h3 style={{ marginBottom: "15px", color: "#2B4B4B" }}>Apply for Event</h3>
+              <p style={{ fontSize: "0.9rem", color: "#666", marginBottom: "10px" }}>
+                Please describe the skills you have that are relevant to this event:
+              </p>
+
+              <textarea
+                style={{
+                  width: "100%", height: "100px", padding: "12px",
+                  borderRadius: "8px", border: "1px solid #ddd",
+                  marginBottom: "20px", resize: "none", fontFamily: "inherit"
+                }}
+                placeholder="e.g. Graphic Design, First Aid, Teaching..."
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+              />
+
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+                <button
+                  onClick={() => setShowApplyModal(false)}
+                  style={{ padding: "8px 20px", borderRadius: "8px", border: "1px solid #ddd", background: "none", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitApplication}
+                  style={{
+                    padding: "8px 20px", borderRadius: "8px", border: "none",
+                    background: "#C76D5E", color: "white", cursor: "pointer", fontWeight: "bold"
+                  }}
+                >
+                  Submit Application
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

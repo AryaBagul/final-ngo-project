@@ -2,27 +2,27 @@ import { useState, useEffect } from "react";
 
 import { useNavigate } from "react-router-dom";
 import API from "../api/axios";
-import ChatContainer from "../components/chat/ChatContainer"; 
+import ChatContainer from "../components/chat/ChatContainer";
 function NgoDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile");
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [donations, setDonations] = useState([]);
-const [unreadCount, setUnreadCount] = useState(0);
-const [notifications, setNotifications] = useState([]);
-const [formLinks, setFormLinks] = useState({
-  website: "",
-  instagram: "",
-  facebook: "",
-  linkedin: ""
-});
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [formLinks, setFormLinks] = useState({
+    website: "",
+    instagram: "",
+    facebook: "",
+    linkedin: ""
+  });
 
-const [socialLinks, setSocialLinks] = useState({
-  website: "",
-  instagram: "",
-  facebook: "",
-  linkedin: ""
-});
+  const [socialLinks, setSocialLinks] = useState({
+    website: "",
+    instagram: "",
+    facebook: "",
+    linkedin: ""
+  });
 
   // Profile info from localStorage
   const userName = localStorage.getItem("userName") || "NGO";
@@ -58,24 +58,24 @@ const [socialLinks, setSocialLinks] = useState({
   const [applications, setApplications] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [appsLoading, setAppsLoading] = useState(false);
- 
+
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
   };
   const fetchUnreadCount = async () => {
-  try {
-    const res = await API.get("/chat/messages/unread-count", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      }
-    });
+    try {
+      const res = await API.get("/chat/messages/unread-count", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
 
-    setUnreadCount(res.data.count);
-  } catch (err) {
-    console.error("Failed to fetch unread count", err);
-  }
-};
+      setUnreadCount(res.data.count);
+    } catch (err) {
+      console.error("Failed to fetch unread count", err);
+    }
+  };
   // ── Fetch Events ──────────────────────────────────────
   const fetchEvents = async () => {
     setEventsLoading(true);
@@ -89,19 +89,19 @@ const [socialLinks, setSocialLinks] = useState({
       setEventsLoading(false);
     }
   };
- const fetchNotifications = async () => {
-  try {
-    const res = await API.get("/notifications", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      }
-    });
+  const fetchNotifications = async () => {
+    try {
+      const res = await API.get("/notifications", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
 
-    setNotifications(res.data);
-  } catch (err) {
-    console.error("Failed to fetch notifications", err);
-  }
-};
+      setNotifications(res.data);
+    } catch (err) {
+      console.error("Failed to fetch notifications", err);
+    }
+  };
 
   // ── Fetch Urgent Needs ────────────────────────────────
   const fetchNeeds = async () => {
@@ -188,35 +188,35 @@ const [socialLinks, setSocialLinks] = useState({
       alert(err.response?.data?.message || "Failed to post urgent need");
     }
   };
-useEffect(() => {
-  fetchUnreadCount();
-
-  const interval = setInterval(() => {
+  useEffect(() => {
     fetchUnreadCount();
-  }, 5000);
 
-  return () => clearInterval(interval);
-}, [localStorage.getItem("token")]);
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [localStorage.getItem("token")]);
 
 
   // Load data when tab changes
-useEffect(() => {
-  try {
-    const storedNgo = localStorage.getItem("ngoDetails");
-    if (storedNgo) {
-      const parsed = JSON.parse(storedNgo);
-      setSocialLinks(parsed);
-      setFormLinks(parsed);
-    }
-  } catch (e) {}
+  useEffect(() => {
+    try {
+      const storedNgo = localStorage.getItem("ngoDetails");
+      if (storedNgo) {
+        const parsed = JSON.parse(storedNgo);
+        setSocialLinks(parsed);
+        setFormLinks(parsed);
+      }
+    } catch (e) { }
 
-  if (activeTab === "calendar") fetchEvents();
-  if (activeTab === "needs") fetchNeeds();
-  if (activeTab === "applications") fetchEvents();
-  if (activeTab === "donations") fetchDonations();
+    if (activeTab === "calendar") fetchEvents();
+    if (activeTab === "needs") fetchNeeds();
+    if (activeTab === "applications") fetchEvents();
+    if (activeTab === "donations") fetchDonations();
     fetchNotifications();
-}, [activeTab]);
-  
+  }, [activeTab]);
+
 
   const menuItems = [
     { id: "profile", label: "Profile", icon: "👤" },
@@ -225,39 +225,39 @@ useEffect(() => {
     { id: "needs", label: "Urgent Needs", icon: "❗" },
     { id: "donations", label: "Donations", icon: "💰" },
     { id: "chat", label: "Connect with NGOs", icon: "💬" }, // ✅ ADD THIS
-    
+
   ];
   const handleSaveLinks = async () => {
-  try {
-    const res = await API.put("/auth/update-links", {
-      ...formLinks,
-      userId: localStorage.getItem("userId")
-    });
+    try {
+      const res = await API.put("/auth/update-links", {
+        ...formLinks,
+        userId: localStorage.getItem("userId")
+      });
 
-    const updatedUser = res.data.user;
+      const updatedUser = res.data.user;
 
-    setSocialLinks(updatedUser.ngoDetails);
-    localStorage.setItem("ngoDetails", JSON.stringify(updatedUser.ngoDetails));
+      setSocialLinks(updatedUser.ngoDetails);
+      localStorage.setItem("ngoDetails", JSON.stringify(updatedUser.ngoDetails));
 
-    setShowLinkForm(false);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-const fetchDonations = async () => {
-  try {
-    const ngoId = localStorage.getItem("userId");
-
-    const res = await API.get(`/donations/ngo/${ngoId}`);
-
-    if (res.data.success) {
-      setDonations(res.data.donations);
+      setShowLinkForm(false);
+    } catch (err) {
+      console.error(err);
     }
-  } catch (err) {
-    console.error("Failed to fetch NGO donations", err);
-  }
-};
+  };
+
+  const fetchDonations = async () => {
+    try {
+      const ngoId = localStorage.getItem("userId");
+
+      const res = await API.get(`/donations/ngo/${ngoId}`);
+
+      if (res.data.success) {
+        setDonations(res.data.donations);
+      }
+    } catch (err) {
+      console.error("Failed to fetch NGO donations", err);
+    }
+  };
 
   return (
     <div className="dashboard-wrapper">
@@ -268,34 +268,34 @@ const fetchDonations = async () => {
           <h2>NGO Panel</h2>
         </div>
         <nav className="sidebar-menu">
-    {menuItems.map((item) => (
-  <button
-    key={item.id}
-    className={`menu-item ${activeTab === item.id ? "active" : ""}`}
-    onClick={() => setActiveTab(item.id)}
-    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
-  >
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-      <span className="menu-icon">{item.icon}</span>
-      {item.label}
-    </div>
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              className={`menu-item ${activeTab === item.id ? "active" : ""}`}
+              onClick={() => setActiveTab(item.id)}
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="menu-icon">{item.icon}</span>
+                {item.label}
+              </div>
 
-    {/* ✅ ADD BADGE HERE */}
-    {item.id === "chat" && unreadCount > 0 && (
-      <span
-        style={{
-          background: "red",
-          color: "white",
-          borderRadius: "50%",
-          padding: "2px 6px",
-          fontSize: "12px",
-        }}
-      >
-        {unreadCount}
-      </span>
-    )}
-  </button>
-))}
+              {/* ✅ ADD BADGE HERE */}
+              {item.id === "chat" && unreadCount > 0 && (
+                <span
+                  style={{
+                    background: "red",
+                    color: "white",
+                    borderRadius: "50%",
+                    padding: "2px 6px",
+                    fontSize: "12px",
+                  }}
+                >
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          ))}
         </nav>
         <button className="logout-btn-sidebar" onClick={handleLogout}>
           <span className="menu-icon">↪️</span> Logout
@@ -315,48 +315,48 @@ const fetchDonations = async () => {
           {activeTab === "profile" && (
             <div className="profile-section">
               {showLinkForm && (
-  <div className="ngo-links-modal-overlay">
-    <div className="ngo-links-modal-box">
+                <div className="ngo-links-modal-overlay">
+                  <div className="ngo-links-modal-box">
 
-      <h3>Add Social Links</h3>
+                    <h3>Add Social Links</h3>
 
-      <input placeholder="Website" value={formLinks.website}
-        onChange={(e) => setFormLinks({ ...formLinks, website: e.target.value })} />
+                    <input placeholder="Website" value={formLinks.website}
+                      onChange={(e) => setFormLinks({ ...formLinks, website: e.target.value })} />
 
-      <input placeholder="Instagram" value={formLinks.instagram}
-        onChange={(e) => setFormLinks({ ...formLinks, instagram: e.target.value })} />
+                    <input placeholder="Instagram" value={formLinks.instagram}
+                      onChange={(e) => setFormLinks({ ...formLinks, instagram: e.target.value })} />
 
-      <input placeholder="Facebook" value={formLinks.facebook}
-        onChange={(e) => setFormLinks({ ...formLinks, facebook: e.target.value })} />
+                    <input placeholder="Facebook" value={formLinks.facebook}
+                      onChange={(e) => setFormLinks({ ...formLinks, facebook: e.target.value })} />
 
-      <input placeholder="LinkedIn" value={formLinks.linkedin}
-        onChange={(e) => setFormLinks({ ...formLinks, linkedin: e.target.value })} />
+                    <input placeholder="LinkedIn" value={formLinks.linkedin}
+                      onChange={(e) => setFormLinks({ ...formLinks, linkedin: e.target.value })} />
 
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={handleSaveLinks}>Save</button>
-        <button onClick={() => setShowLinkForm(false)}>Cancel</button>
-      </div>
+                    <div style={{ marginTop: "10px" }}>
+                      <button onClick={handleSaveLinks}>Save</button>
+                      <button onClick={() => setShowLinkForm(false)}>Cancel</button>
+                    </div>
 
-    </div>
-  </div>
-)}
+                  </div>
+                </div>
+              )}
               <div className="section-header" style={{ display: "flex", justifyContent: "space-between" }}>
-  <h2>NGO Profile</h2>
+                <h2>NGO Profile</h2>
 
-  <button
-    onClick={() => setShowLinkForm(true)}
-    style={{
-      padding: "6px 12px",
-      backgroundColor: "#4C7A7A",
-      color: "white",
-      border: "none",
-      borderRadius: "6px",
-      cursor: "pointer"
-    }}
-  >
-    Add Links
-  </button>
-</div>
+                <button
+                  onClick={() => setShowLinkForm(true)}
+                  style={{
+                    padding: "6px 12px",
+                    backgroundColor: "#4C7A7A",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer"
+                  }}
+                >
+                  Add Links
+                </button>
+              </div>
               <div className="profile-grid">
                 <div className="info-item">
                   <label>🏢 NGO Name</label>
@@ -397,29 +397,29 @@ const fetchDonations = async () => {
                   <p style={{ color: '#4C7A7A' }}>Active</p>
                 </div>
                 {(socialLinks.website || socialLinks.instagram || socialLinks.facebook || socialLinks.linkedin) && (
-  <div className="info-item-wide">
-    <label>🌐 Social Links</label>
+                  <div className="info-item-wide">
+                    <label>🌐 Social Links</label>
 
-    {socialLinks.website && (
-      <p>🌐 <a href={socialLinks.website} target="_blank" rel="noreferrer">Website</a></p>
-    )}
+                    {socialLinks.website && (
+                      <p>🌐 <a href={socialLinks.website} target="_blank" rel="noreferrer">Website</a></p>
+                    )}
 
-    {socialLinks.instagram && (
-      <p>📸 <a href={socialLinks.instagram} target="_blank">Instagram</a></p>
-    )}
+                    {socialLinks.instagram && (
+                      <p>📸 <a href={socialLinks.instagram} target="_blank">Instagram</a></p>
+                    )}
 
-    {socialLinks.facebook && (
-      <p>📘 <a href={socialLinks.facebook} target="_blank"  rel="noreferrer">Facebook</a></p>
-    )}
+                    {socialLinks.facebook && (
+                      <p>📘 <a href={socialLinks.facebook} target="_blank" rel="noreferrer">Facebook</a></p>
+                    )}
 
-    {socialLinks.linkedin && (
-      <p>💼 <a href={socialLinks.linkedin} target="_blank">LinkedIn</a></p>
-    )}
-  </div>
-)}
+                    {socialLinks.linkedin && (
+                      <p>💼 <a href={socialLinks.linkedin} target="_blank">LinkedIn</a></p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-            
+
           )}
 
           {/* ── EVENT CALENDAR TAB ──────────────────────── */}
@@ -532,6 +532,18 @@ const fetchDonations = async () => {
                     <div className="card-info">
                       <h3>{app.volunteer?.name || "Unknown Volunteer"}</h3>
                       <p className="meta-text">✉️ {app.volunteer?.email}</p>
+                      {/* Display Volunteer Skills */}
+                      <div style={{
+                        margin: "10px 0",
+                        padding: "8px",
+                        background: "#f0f7f7",
+                        borderRadius: "6px",
+                        borderLeft: "4px solid #4C7A7A"
+                      }}>
+                        <p style={{ fontWeight: "600", marginBottom: "4px", fontSize: "0.9rem" }}>Volunteer Skills:</p>
+                        <p style={{ fontStyle: "italic", color: "#444" }}>{app.skills || "No skills provided"}</p>
+                      </div>
+
                       <p className="meta-text">
                         Status: <span style={{ fontWeight: 700, color: app.status === 'approved' ? '#00C853' : app.status === 'rejected' ? '#ff4444' : '#4C7A7A', textTransform: 'capitalize' }}>{app.status}</span>
                       </p>
@@ -558,11 +570,11 @@ const fetchDonations = async () => {
             </div>
           )}
           {activeTab === "chat" && (
-  <div style={{ height: "80vh" }}>
-    
- <ChatContainer refreshUnread={fetchUnreadCount} />
-  </div>
-)}
+            <div style={{ height: "80vh" }}>
+
+              <ChatContainer refreshUnread={fetchUnreadCount} />
+            </div>
+          )}
 
           {/* ── URGENT NEEDS TAB ────────────────────────── */}
           {activeTab === "needs" && (
@@ -615,89 +627,89 @@ const fetchDonations = async () => {
                       <p className="meta-text">📍 {need.location}</p>
                     </div>
                   </div>
-                  
+
                 ))}
-                
+
               </div>
             </div>
           )}
           {activeTab === "donations" && (
-  <div>
-    <div className="section-header">
-      <h2>Received Donations</h2>
-    </div>
+            <div>
+              <div className="section-header">
+                <h2>Received Donations</h2>
+              </div>
 
-    <div className="list-container">
-      {donations.length > 0 ? (
-        donations.map((d) => (
-          <div key={d._id} className="horizontal-card">
-            <div className="card-info">
-              
-              <h3>{d.donor?.name || "Unknown Donor"}</h3>
+              <div className="list-container">
+                {donations.length > 0 ? (
+                  donations.map((d) => (
+                    <div key={d._id} className="horizontal-card">
+                      <div className="card-info">
 
-              <p className="meta-text">
-                {d.type === "money"
-                  ? `💰 ₹${d.amount}`
-                  : `📦 ${d.items}`}
-              </p>
+                        <h3>{d.donor?.name || "Unknown Donor"}</h3>
 
-              <p className="meta-text">
-                📅 {new Date(d.createdAt).toLocaleDateString()}
-              </p>
+                        <p className="meta-text">
+                          {d.type === "money"
+                            ? `💰 ₹${d.amount}`
+                            : `📦 ${d.items}`}
+                        </p>
 
-              <p className="meta-text">
-                Status:{" "}
-                <span style={{
-                  color: d.status === "completed" ? "green" : "orange",
-                  fontWeight: "bold"
-                }}>
-                  {d.status}
-                </span>
-              </p>
+                        <p className="meta-text">
+                          📅 {new Date(d.createdAt).toLocaleDateString()}
+                        </p>
+
+                        <p className="meta-text">
+                          Status:{" "}
+                          <span style={{
+                            color: d.status === "completed" ? "green" : "orange",
+                            fontWeight: "bold"
+                          }}>
+                            {d.status}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* OPTIONAL: update status */}
+                      {d.status !== "completed" ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              await API.put(
+                                `/donations/${d._id}/status`,
+                                { status: "completed" },
+                                {
+                                  headers: {
+                                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                  },
+                                }
+                              );
+
+                              fetchDonations();
+                            } catch (err) {
+                              console.error(err);
+                            }
+                          }}
+                          className="green-btn"
+                        >
+                          Mark Completed
+                        </button>
+                      ) : (
+                        <button
+                          className="green-btn"
+                          style={{ backgroundColor: "#ccc", cursor: "not-allowed" }}
+                          disabled
+                        >
+                          Completed
+                        </button>
+                      )}
+
+                    </div>
+                  ))
+                ) : (
+                  <p>No donations received yet.</p>
+                )}
+              </div>
             </div>
-
-            {/* OPTIONAL: update status */}
-   {d.status !== "completed" ? (
-  <button
-    onClick={async () => {
-      try {
-        await API.put(
-          `/donations/${d._id}/status`,
-          { status: "completed" },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-
-        fetchDonations();
-      } catch (err) {
-        console.error(err);
-      }
-    }}
-    className="green-btn"
-  >
-    Mark Completed
-  </button>
-) : (
-  <button
-    className="green-btn"
-    style={{ backgroundColor: "#ccc", cursor: "not-allowed" }}
-    disabled
-  >
-    Completed
-  </button>
-)}
-
-          </div>
-        ))
-      ) : (
-        <p>No donations received yet.</p>
-      )}
-    </div>
-  </div>
-)}
+          )}
 
         </div>
       </div>

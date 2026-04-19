@@ -12,9 +12,9 @@ router.get("/ngos", getNGOs);
 
 router.get("/all-ngos", async (req, res) => {
   try {
-   const ngos = await Users.find({ role: "ngo" }).select(
-  "name email ngoDetails"
-);
+    const ngos = await Users.find({ role: "ngo" }).select(
+      "name email ngoDetails"
+    );
     res.json(ngos);
   } catch (err) {
     console.error("Error in /all-ngos:", err);
@@ -24,6 +24,19 @@ router.get("/all-ngos", async (req, res) => {
 
 // ✅ now this works
 router.put("/update-links", updateLinks);
+
+// backend/routes/authRoutes.js
+
+router.get("/user-count", async (req, res) => {
+  try {
+    // Counts all documents in the Users collection
+    const count = await Users.countDocuments();
+    res.json({ count });
+  } catch (err) {
+    console.error("Error fetching user count:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;
 

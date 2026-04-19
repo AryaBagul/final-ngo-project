@@ -9,6 +9,11 @@ router.post("/apply/:eventId", authMiddleware, async (req, res) => {
     if (req.user.role.toLowerCase() !== "volunteer") {
       return res.status(403).json({ message: "Only volunteers can apply" });
     }
+    const { skills } = req.body;
+
+    if (!skills) {
+      return res.status(400).json({ message: "Please provide your skills for this event" });
+    }
 
     const existing = await Application.findOne({
       event: req.params.eventId,
@@ -22,6 +27,7 @@ router.post("/apply/:eventId", authMiddleware, async (req, res) => {
     const application = await Application.create({
       event: req.params.eventId,
       volunteer: req.user.id,
+      skills: skills,
     });
 
     res.status(201).json(application);
@@ -55,8 +61,8 @@ router.put("/:applicationId", authMiddleware, async (req, res) => {
     }
 
     const application = await Application.findById(req.params.applicationId)
-  .populate("event")
-  .populate("volunteer");
+      .populate("event")
+      .populate("volunteer");
 
     if (!application) {
       return res.status(404).json({ message: "Application not found" });
@@ -71,23 +77,23 @@ router.put("/:applicationId", authMiddleware, async (req, res) => {
     await application.save();
     const status = req.body.status;
 
-// ✅ Send email if approved
-if (status === "approved") {
-  await sendEmail(
-    application.volunteer.email,
-    "Volunteer Application Approved 🎉",
-    `Hello ${application.volunteer.name}, your application for "${application.event.title}" has been approved by the NGO. Welcome aboard!`
-  );
-}
+    // ✅ Send email if approved
+    if (status === "approved") {
+      await sendEmail(
+        application.volunteer.email,
+        "Volunteer Application Approved 🎉",
+        `Hello ${application.volunteer.name}, your application for "${application.event.title}" has been approved by the NGO. Welcome aboard!`
+      );
+    }
 
-// ❌ Optional: for rejection
-if (status === "rejected") {
-  await sendEmail(
-    application.volunteer.email,
-    "Application Update",
-    `Hello ${application.volunteer.name}, unfortunately your application for "${application.event.title}" was not selected.`
-  );
-}
+    // ❌ Optional: for rejection
+    if (status === "rejected") {
+      await sendEmail(
+        application.volunteer.email,
+        "Application Update",
+        `Hello ${application.volunteer.name}, unfortunately your application for "${application.event.title}" was not selected.`
+      );
+    }
     res.json(application);
   } catch (error) {
     res.status(500).json({ message: error.message });
