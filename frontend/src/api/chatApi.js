@@ -9,8 +9,9 @@ export const getMessages = (conversationId) =>
   API.get(`/chat/messages/${conversationId}`);
 
 // send message
-export const sendMessageAPI = (data) =>
-  API.post("/chat/send", data);
+export const sendMessageAPI = (data) => {
+  return API.post("/chat/message", data);
+};
 
 // ✅ NEW: mark messages as seen
 export const markMessagesSeen = (conversationId, userId) =>

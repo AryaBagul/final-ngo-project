@@ -3,9 +3,14 @@ import ConversationList from "./ConversationList";
 import ChatWindow from "./ChatWindow";
 import "../../styles/chat.css";
 
-const ChatContainer = () => {
+const ChatContainer = ({ refreshUnread }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // ✅ Handle chat selection
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setIsSidebarOpen(false); // Close sidebar on chat selection
+  };
 
   // ✅ Toggle function
   const toggleSidebar = () => {
@@ -17,7 +22,10 @@ const ChatContainer = () => {
 
       {/* LEFT SIDEBAR (NGO LIST) */}
       <div className={`sidebar-wrapper ${isSidebarOpen ? "open" : "closed"}`}>
-        <ConversationList onSelectChat={setSelectedChat} />
+        <ConversationList
+  onSelectChat={handleSelectChat}
+  refreshUnread={refreshUnread}
+/>
       </div>
 
       {/* TOGGLE BUTTON */}
@@ -33,6 +41,7 @@ const ChatContainer = () => {
         selectedChat={selectedChat}
         openSidebar={() => setIsSidebarOpen(true)}
         isSidebarOpen={isSidebarOpen}
+        refreshUnread={refreshUnread}
       />
 
     </div>

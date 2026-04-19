@@ -23,4 +23,12 @@ const sendEmail = async (to, subject, text) => {
   }
 };
 
-module.exports = sendEmail;
+// ✅ ADD THIS FUNCTION (for first message notification)
+const sendConnectionEmail = async (to, senderNgoName) => {
+  const subject = "New NGO wants to connect with you";
+  const text = `${senderNgoName} wants to connect with you on NGO Connect. Login to your dashboard to start chatting.`;
+
+  await sendEmail(to, subject, text);
+};
+
+module.exports = { sendEmail, sendConnectionEmail };

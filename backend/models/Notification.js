@@ -8,16 +8,16 @@ const notificationSchema = new mongoose.Schema(
       required: true,
     },
     referenceId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "UrgentNeed"
-},
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UrgentNeed",
+    },
     message: {
       type: String,
       required: true,
     },
     type: {
       type: String,
-      enum: ["urgent_need", "donation"],
+      enum: ["urgent_need", "donation", "message"], // ✅ added "message"
     },
     isRead: {
       type: Boolean,

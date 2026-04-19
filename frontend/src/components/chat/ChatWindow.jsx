@@ -1,12 +1,14 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import socket from "../../services/socket";
+import API from "../../api/axios";
 import {
   getOrCreateConversation,
   getMessages,
   sendMessageAPI,
 } from "../../api/chatApi";
 
-const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
+const ChatWindow = ({ selectedChat, refreshUnread }) => {
   const [messages, setMessages] = useState([]);
   const [conversationId, setConversationId] = useState(null);
   const [text, setText] = useState("");
@@ -16,48 +18,45 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
   const messageListRef = useRef(null);
   const userId = localStorage.getItem("userId");
 
-  // ✅ SCROLL FUNCTION
+  // ✅ scroll
   const scrollToBottom = () => {
     const el = messageListRef.current;
     if (!el) return;
-
     el.scrollTop = el.scrollHeight;
     setShowScrollBtn(false);
   };
 
-  // ✅ SCROLL DETECTION
+  // ✅ scroll detection
   useEffect(() => {
     const el = messageListRef.current;
     if (!el) return;
 
     const handleScroll = () => {
-      const distanceFromBottom =
+      const distance =
         el.scrollHeight - el.scrollTop - el.clientHeight;
-
-      setShowScrollBtn(distanceFromBottom > 80);
+      setShowScrollBtn(distance > 80);
     };
 
     el.addEventListener("scroll", handleScroll);
-
     setTimeout(handleScroll, 100);
 
     return () => el.removeEventListener("scroll", handleScroll);
   }, [messages]);
 
-  // ✅ AUTO SCROLL
+  // ✅ auto scroll
   useEffect(() => {
     const el = messageListRef.current;
     if (!el) return;
 
-    const distanceFromBottom =
+    const distance =
       el.scrollHeight - el.scrollTop - el.clientHeight;
 
-    if (distanceFromBottom < 80) {
+    if (distance < 80) {
       el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
 
-  // 🔹 SETUP CHAT
+  // 🔥 SETUP CHAT (FIXED)
   useEffect(() => {
     const setupChat = async () => {
       if (!selectedChat) return;
@@ -71,9 +70,13 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
         });
 
         const convId = res.data._id;
+        console.log("CONVERSATION:", convId);
+
         setConversationId(convId);
 
+        // ✅ FETCH MESSAGES FIRST
         const msgRes = await getMessages(convId);
+        console.log("MESSAGES:", msgRes.data);
 
         const updatedMsgs = msgRes.data.map((msg) => ({
           ...msg,
@@ -82,8 +85,22 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
 
         setMessages(updatedMsgs);
 
+        // ✅ MARK AS READ (AFTER convId exists)
+        await API.put(
+          "/chat/messages/read",
+          { conversationId: convId },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (refreshUnread) refreshUnread();
+
         setTimeout(scrollToBottom, 100);
 
+        // ✅ SOCKET JOIN
         socket.emit("joinConversation", {
           sender: userId,
           receiver: receiverId,
@@ -93,6 +110,7 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
           conversationId: convId,
           viewerId: userId,
         });
+
       } catch (err) {
         console.error("Chat setup error:", err);
       }
@@ -144,7 +162,7 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
       socket.off("messagesSeen");
       socket.off("typing");
     };
-  }, [userId, selectedChat]);
+  }, [selectedChat]);
 
   // 🔹 SEND MESSAGE
   const handleSend = async () => {
@@ -161,7 +179,8 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
 
     try {
       socket.emit("sendMessage", message);
-      await sendMessageAPI(message);
+     
+      if (refreshUnread) refreshUnread();
     } catch (err) {
       console.error("Send message error:", err);
     }
@@ -196,14 +215,13 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
 
   return (
     <div className="chat-window">
-      {/* ✅ HEADER */}
+      {/* HEADER */}
       <div className="chat-header">
         <span className="chat-title">
-        {selectedChat.name || "Chat"}
+          {selectedChat.name || "Chat"}
         </span>
       </div>
 
-      {/* TYPING */}
       {typingUser && <div className="typing">Typing...</div>}
 
       {/* MESSAGES */}
@@ -237,7 +255,7 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
         ))}
       </div>
 
-      {/* SCROLL BUTTON */}
+      {/* SCROLL BTN */}
       {showScrollBtn && (
         <button className="scroll-to-bottom" onClick={scrollToBottom}>
           ↓
@@ -260,3 +278,4 @@ const ChatWindow = ({ selectedChat, openSidebar, isSidebarOpen = true }) => {
 };
 
 export default ChatWindow;
+

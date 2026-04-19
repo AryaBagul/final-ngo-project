@@ -8,6 +8,8 @@ function NgoDashboard() {
   const [activeTab, setActiveTab] = useState("profile");
   const [showLinkForm, setShowLinkForm] = useState(false);
   const [donations, setDonations] = useState([]);
+const [unreadCount, setUnreadCount] = useState(0);
+const [notifications, setNotifications] = useState([]);
 const [formLinks, setFormLinks] = useState({
   website: "",
   instagram: "",
@@ -61,7 +63,19 @@ const [socialLinks, setSocialLinks] = useState({
     localStorage.clear();
     navigate("/");
   };
+  const fetchUnreadCount = async () => {
+  try {
+    const res = await API.get("/chat/messages/unread-count", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });
 
+    setUnreadCount(res.data.count);
+  } catch (err) {
+    console.error("Failed to fetch unread count", err);
+  }
+};
   // ── Fetch Events ──────────────────────────────────────
   const fetchEvents = async () => {
     setEventsLoading(true);
@@ -75,6 +89,19 @@ const [socialLinks, setSocialLinks] = useState({
       setEventsLoading(false);
     }
   };
+ const fetchNotifications = async () => {
+  try {
+    const res = await API.get("/notifications", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });
+
+    setNotifications(res.data);
+  } catch (err) {
+    console.error("Failed to fetch notifications", err);
+  }
+};
 
   // ── Fetch Urgent Needs ────────────────────────────────
   const fetchNeeds = async () => {
@@ -161,6 +188,16 @@ const [socialLinks, setSocialLinks] = useState({
       alert(err.response?.data?.message || "Failed to post urgent need");
     }
   };
+useEffect(() => {
+  fetchUnreadCount();
+
+  const interval = setInterval(() => {
+    fetchUnreadCount();
+  }, 5000);
+
+  return () => clearInterval(interval);
+}, [localStorage.getItem("token")]);
+
 
   // Load data when tab changes
 useEffect(() => {
@@ -177,6 +214,7 @@ useEffect(() => {
   if (activeTab === "needs") fetchNeeds();
   if (activeTab === "applications") fetchEvents();
   if (activeTab === "donations") fetchDonations();
+    fetchNotifications();
 }, [activeTab]);
   
 
@@ -220,6 +258,7 @@ const fetchDonations = async () => {
     console.error("Failed to fetch NGO donations", err);
   }
 };
+
   return (
     <div className="dashboard-wrapper">
       {/* LEFT SIDEBAR PANEL */}
@@ -229,16 +268,34 @@ const fetchDonations = async () => {
           <h2>NGO Panel</h2>
         </div>
         <nav className="sidebar-menu">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              className={`menu-item ${activeTab === item.id ? "active" : ""}`}
-              onClick={() => setActiveTab(item.id)}
-            >
-              <span className="menu-icon">{item.icon}</span>
-              {item.label}
-            </button>
-          ))}
+    {menuItems.map((item) => (
+  <button
+    key={item.id}
+    className={`menu-item ${activeTab === item.id ? "active" : ""}`}
+    onClick={() => setActiveTab(item.id)}
+    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <span className="menu-icon">{item.icon}</span>
+      {item.label}
+    </div>
+
+    {/* ✅ ADD BADGE HERE */}
+    {item.id === "chat" && unreadCount > 0 && (
+      <span
+        style={{
+          background: "red",
+          color: "white",
+          borderRadius: "50%",
+          padding: "2px 6px",
+          fontSize: "12px",
+        }}
+      >
+        {unreadCount}
+      </span>
+    )}
+  </button>
+))}
         </nav>
         <button className="logout-btn-sidebar" onClick={handleLogout}>
           <span className="menu-icon">↪️</span> Logout
@@ -503,7 +560,7 @@ const fetchDonations = async () => {
           {activeTab === "chat" && (
   <div style={{ height: "80vh" }}>
     
-    <ChatContainer />
+ <ChatContainer refreshUnread={fetchUnreadCount} />
   </div>
 )}
 

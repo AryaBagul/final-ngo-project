@@ -382,3 +382,15 @@
 .toggle-btn.closed {
   left: 20px;   /* move to extreme left */
 }
+.unread-badge {
+  background-color: #25d366;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

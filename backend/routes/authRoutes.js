@@ -12,8 +12,9 @@ router.get("/ngos", getNGOs);
 
 router.get("/all-ngos", async (req, res) => {
   try {
-    const ngos = await Users.find({ role: "ngo" });
-
+   const ngos = await Users.find({ role: "ngo" }).select(
+  "name email ngoDetails"
+);
     res.json(ngos);
   } catch (err) {
     console.error("Error in /all-ngos:", err);

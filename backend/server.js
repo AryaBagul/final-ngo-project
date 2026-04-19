@@ -123,6 +123,7 @@ app.use(express.json());
 
 // 🔹 ROUTES
 app.use("/api/auth", require("./routes/authRoutes"));
+
 app.use("/api/events", require("./routes/eventRoutes"));
 app.use("/api/urgent", require("./routes/urgentRoutes"));
 app.use("/api/applications", require("./routes/applicationRoutes"));
