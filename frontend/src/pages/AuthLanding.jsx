@@ -15,7 +15,7 @@ function AuthLanding() {
     useEffect(() => {
         const fetchCount = async () => {
             try {
-                const res = await axios.get(""https://ngoconnect-backend-xnyv.onrender.com/api/auth/user-count"");
+                const res = await axios.get("https://ngoconnect-backend-xnyv.onrender.com/api/auth/user-count");
                 setTotalUsers(res.data.count);
             } catch (err) {
                 console.error("Failed to fetch user count", err);
