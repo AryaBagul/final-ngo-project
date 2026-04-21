@@ -8,32 +8,33 @@ const ConversationList = ({ onSelectChat, refreshUnread }) => {
 
   const userId = localStorage.getItem("userId");
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const token = localStorage.getItem("token");
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const token = localStorage.getItem("token");
 
-        const [convRes, ngosRes] = await Promise.all([
-          API.get("/chat/conversations", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          API.get("/auth/all-ngos"),
-        ]);
+      const [convRes, ngosRes] = await Promise.all([
+        API.get("/chat/conversations", {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        API.get("/auth/all-ngos"),
+      ]);
 
-        const conversations = convRes.data;
-        const allNgos = ngosRes.data;
+      const conversations = convRes.data;
+      const allNgos = ngosRes.data;
 
-        // remove yourself
-        const filteredNgos = allNgos.filter(
-          (ngo) => ngo._id !== userId
-        );
+      const filteredNgos = allNgos.filter(
+        (ngo) => ngo._id !== userId
+      );
 
-        // enrich conversations
-        const enrichedConversations = conversations.map((conv) => {
+      const enrichedConversations = conversations
+        .map((conv) => {
           const ngoId =
             typeof conv.ngo === "object"
-              ? conv.ngo._id
+              ? conv.ngo?._id
               : conv.ngo;
+
+          if (!ngoId) return null;
 
           const fullNgo = allNgos.find(
             (ngo) => ngo._id.toString() === ngoId.toString()
@@ -43,121 +44,136 @@ const ConversationList = ({ onSelectChat, refreshUnread }) => {
             ...conv,
             ngo: fullNgo || conv.ngo,
           };
-        });
+        })
+        .filter(Boolean);
 
-        // NGOs already in chat
-        const chatNgoIds = enrichedConversations.map((c) =>
-          c.ngo._id.toString()
-        );
+      const chatNgoIds = enrichedConversations
+        .filter((c) => c.ngo && c.ngo._id)
+        .map((c) => c.ngo._id.toString());
 
-        // NGOs without chat
-        const remainingNgos = filteredNgos.filter(
-          (ngo) => !chatNgoIds.includes(ngo._id.toString())
-        );
+      const remainingNgos = filteredNgos.filter(
+        (ngo) => !chatNgoIds.includes(ngo._id.toString())
+      );
 
-        const formattedRemaining = remainingNgos.map((ngo) => ({
-          conversationId: null,
-          ngo,
-          unreadCount: 0,
-          lastMessage: "",
-          lastMessageTime: null,
-        }));
+      const formattedRemaining = remainingNgos.map((ngo) => ({
+        conversationId: null,
+        ngo,
+        unreadCount: 0,
+        lastMessage: "",
+        lastMessageTime: null,
+      }));
 
-        setNgos([...enrichedConversations, ...formattedRemaining]);
+      setNgos([...enrichedConversations, ...formattedRemaining]);
 
-      } catch (err) {
-        console.error("Error loading chats", err);
-      }
-    };
+    } catch (err) {
+      console.error("Error loading chats", err);
+    }
+  };
 
+  // 🔥 INITIAL LOAD
+  loadData();
+
+  // 🔥 AUTO REFRESH EVERY 2 SEC
+  const interval = setInterval(() => {
     loadData();
-  }, []);
+  }, 2000);
 
+  return () => clearInterval(interval);
+
+}, []);
   return (
     <div className="conversation-list">
       <h3 className="chat-title">NGOs</h3>
 
-      {ngos.map((chat) => (
-        <div
-          key={chat.conversationId || chat.ngo._id}
-          className="conversation-item"
-        >
-          {/* LEFT SIDE */}
+      {ngos.map((chat) => {
+        if (!chat.ngo) return null; // 🔥 safety
+
+        return (
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flex: 1,
-              cursor: "pointer",
-            }}
-            onClick={() => {
-              onSelectChat(chat.ngo);
-
-              // reset unread locally
-              setNgos((prev) =>
-                prev.map((c) =>
-                  c.ngo._id === chat.ngo._id
-                    ? { ...c, unreadCount: 0 }
-                    : c
-                )
-              );
-
-              if (refreshUnread) refreshUnread();
-            }}
+            key={chat.conversationId || chat.ngo?._id}
+            className="conversation-item"
           >
-            {/* Avatar */}
-            <div className="avatar">
-              {chat.ngo?.name?.slice(0, 2).toUpperCase()}
+            {/* LEFT SIDE */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flex: 1,
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                onSelectChat(chat.ngo);
+
+                // reset unread locally
+                setNgos((prev) =>
+                  prev.map((c) =>
+                    c.ngo?._id === chat.ngo._id
+                      ? { ...c, unreadCount: 0 }
+                      : c
+                  )
+                );
+
+                if (refreshUnread) refreshUnread();
+              }}
+            >
+              {/* Avatar */}
+              <div className="avatar">
+                {chat.ngo?.name?.slice(0, 2).toUpperCase()}
+              </div>
+
+              {/* Info */}
+              <div className="conversation-info">
+                <div className="ngo-name">
+                  {chat.ngo?.name || "Unknown NGO"}
+                </div>
+
+                <div style={{ fontSize: "12px", color: "gray" }}>
+  {chat.lastMessage
+    ? chat.lastMessage.length > 25
+      ? chat.lastMessage.slice(0, 25) + "..."
+      : chat.lastMessage
+    : "Start a conversation"}
+</div>
+              </div>
             </div>
 
-            {/* Info */}
-            <div className="conversation-info">
-              <div className="ngo-name">
-                {chat.ngo?.name || "Unknown NGO"}
-              </div>
+            {/* RIGHT SIDE */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-end",
+                gap: "4px",
+              }}
+            >
+              {/* TIME */}
+              {chat.lastMessageTime && (
+                <div style={{ fontSize: "10px", color: "gray" }}>
+                  {new Date(chat.lastMessageTime).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              )}
 
-              <div style={{ fontSize: "12px", color: "gray" }}>
-                {chat.lastMessage}
-              </div>
+              {/* UNREAD BADGE */}
+              {chat.unreadCount > 0 && (
+                <div className="unread-badge">
+                  {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
+                </div>
+              )}
             </div>
+
+            {/* EXPLORE BUTTON */}
+            <button
+              className="explore-btn"
+              onClick={() => setSelectedNgo(chat.ngo)}
+            >
+              Explore NGO
+            </button>
           </div>
-
-          {/* RIGHT SIDE */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: "4px",
-            }}
-          >
-            {/* TIME */}
-            {chat.lastMessageTime && (
-              <div style={{ fontSize: "10px", color: "gray" }}>
-                {new Date(chat.lastMessageTime).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </div>
-            )}
-
-            {/* 🔥 UNREAD BADGE */}
-            {chat.unreadCount > 0 && (
-              <div className="unread-badge">
-                {chat.unreadCount > 9 ? "9+" : chat.unreadCount}
-              </div>
-            )}
-          </div>
-
-          {/* EXPLORE BUTTON */}
-          <button
-            className="explore-btn"
-            onClick={() => setSelectedNgo(chat.ngo)}
-          >
-            Explore NGO
-          </button>
-        </div>
-      ))}
+        );
+      })}
 
       {/* MODAL */}
       {selectedNgo && (

@@ -42,6 +42,7 @@ const ChatContainer = ({ refreshUnread }) => {
         openSidebar={() => setIsSidebarOpen(true)}
         isSidebarOpen={isSidebarOpen}
         refreshUnread={refreshUnread}
+          
       />
 
     </div>

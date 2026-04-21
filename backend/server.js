@@ -1,5 +1,3 @@
-
-
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -11,10 +9,10 @@ const { Server } = require("socket.io");
 const donationRoutes = require("./routes/donationRoutes");
 const connectDB = require("./config/db");
 const Message = require("./models/Message");
+const Conversation = require("./models/Conversation"); // ✅ ADDED
 const adminRoutes = require("./routes/adminRoutes");
 
 const notificationRoutes = require("./routes/notificationRoutes");
-
 
 const server = http.createServer(app);
 
@@ -55,15 +53,27 @@ io.on("connection", (socket) => {
         status: "sent",
       });
 
-      // 2️⃣ Send to both users
+      // ✅ 2️⃣ UPDATE CONVERSATION (FIXED)
+      const updatedConv = await Conversation.findByIdAndUpdate(
+        conversationId,
+        {
+          lastMessage: text,
+          updatedAt: new Date(),
+        },
+        { new: true }
+      );
+
+      console.log("UPDATED CONVERSATION:", updatedConv);
+
+      // 3️⃣ Send to both users
       io.to(roomId).emit("receiveMessage", newMessage);
 
-      // 3️⃣ Mark delivered
+      // 4️⃣ Mark delivered
       await Message.findByIdAndUpdate(newMessage._id, {
         status: "delivered",
       });
 
-      // 4️⃣ Notify sender only
+      // 5️⃣ Notify sender only
       io.to(sender).emit("messageDelivered", {
         messageId: newMessage._id,
       });
@@ -73,17 +83,15 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 🔹 MARK AS SEEN (✅ FIXED PROPERLY)
+  // 🔹 MARK AS SEEN
   socket.on("markSeen", async ({ conversationId, viewerId }) => {
     try {
-      // 1️⃣ Find messages that THIS user received
       const messages = await Message.find({
         conversationId,
         receiver: viewerId,
         status: { $ne: "seen" },
       });
 
-      // 2️⃣ Update them to seen
       await Message.updateMany(
         {
           conversationId,
@@ -93,7 +101,6 @@ io.on("connection", (socket) => {
         { status: "seen" }
       );
 
-      // 3️⃣ Notify ORIGINAL SENDERS only
       messages.forEach((msg) => {
         io.to(msg.sender).emit("messagesSeen", {
           messageId: msg._id,
@@ -123,13 +130,12 @@ app.use(express.json());
 
 // 🔹 ROUTES
 app.use("/api/auth", require("./routes/authRoutes"));
-
 app.use("/api/events", require("./routes/eventRoutes"));
 app.use("/api/urgent", require("./routes/urgentRoutes"));
 app.use("/api/applications", require("./routes/applicationRoutes"));
 app.use("/api/donations", donationRoutes);
 app.use("/api/chat", require("./routes/chatRoutes"));
-app.use("/api/admin", adminRoutes)
+app.use("/api/admin", adminRoutes);
 app.use("/api/payment", require("./routes/paymentRoutes"));
 app.use("/api/notifications", notificationRoutes);
 

@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import socket from "../../services/socket";
 import API from "../../api/axios";
 import {
   getOrCreateConversation,
   getMessages,
-  sendMessageAPI,
 } from "../../api/chatApi";
 
 const ChatWindow = ({ selectedChat, refreshUnread }) => {
@@ -56,7 +54,7 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
     }
   }, [messages]);
 
-  // 🔥 SETUP CHAT (FIXED)
+  // 🔥 SETUP CHAT
   useEffect(() => {
     const setupChat = async () => {
       if (!selectedChat) return;
@@ -70,13 +68,10 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
         });
 
         const convId = res.data._id;
-        console.log("CONVERSATION:", convId);
 
         setConversationId(convId);
 
-        // ✅ FETCH MESSAGES FIRST
         const msgRes = await getMessages(convId);
-        console.log("MESSAGES:", msgRes.data);
 
         const updatedMsgs = msgRes.data.map((msg) => ({
           ...msg,
@@ -85,7 +80,6 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
 
         setMessages(updatedMsgs);
 
-        // ✅ MARK AS READ (AFTER convId exists)
         await API.put(
           "/chat/messages/read",
           { conversationId: convId },
@@ -100,7 +94,6 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
 
         setTimeout(scrollToBottom, 100);
 
-        // ✅ SOCKET JOIN
         socket.emit("joinConversation", {
           sender: userId,
           receiver: receiverId,
@@ -119,17 +112,17 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
     setupChat();
   }, [selectedChat, userId]);
 
-  // 🔹 SOCKET LISTENERS
+  // 🔹 SOCKET LISTENERS (FIXED)
   useEffect(() => {
-    socket.on("receiveMessage", (msg) => {
+    const handleReceive = (msg) => {
       setMessages((prev) => {
         const exists = prev.some((m) => m._id === msg._id);
         if (exists) return prev;
         return [...prev, msg];
       });
-    });
+    };
 
-    socket.on("messageDelivered", ({ messageId }) => {
+    const handleDelivered = ({ messageId }) => {
       setMessages((prev) =>
         prev.map((msg) =>
           msg._id === messageId
@@ -137,9 +130,9 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
             : msg
         )
       );
-    });
+    };
 
-    socket.on("messagesSeen", ({ messageId }) => {
+    const handleSeen = ({ messageId }) => {
       setMessages((prev) =>
         prev.map((msg) =>
           msg._id === messageId
@@ -147,24 +140,29 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
             : msg
         )
       );
-    });
+    };
 
-    socket.on("typing", ({ sender }) => {
+    const handleTyping = ({ sender }) => {
       if (sender === selectedChat?._id) {
         setTypingUser(sender);
         setTimeout(() => setTypingUser(null), 2000);
       }
-    });
+    };
+
+    socket.on("receiveMessage", handleReceive);
+    socket.on("messageDelivered", handleDelivered);
+    socket.on("messagesSeen", handleSeen);
+    socket.on("typing", handleTyping);
 
     return () => {
-      socket.off("receiveMessage");
-      socket.off("messageDelivered");
-      socket.off("messagesSeen");
-      socket.off("typing");
+      socket.off("receiveMessage", handleReceive);
+      socket.off("messageDelivered", handleDelivered);
+      socket.off("messagesSeen", handleSeen);
+      socket.off("typing", handleTyping);
     };
   }, [selectedChat]);
 
-  // 🔹 SEND MESSAGE
+  // 🔹 SEND MESSAGE (FIXED - NO TEMP MESSAGE)
   const handleSend = async () => {
     if (!text.trim() || !conversationId) return;
 
@@ -179,7 +177,7 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
 
     try {
       socket.emit("sendMessage", message);
-     
+
       if (refreshUnread) refreshUnread();
     } catch (err) {
       console.error("Send message error:", err);
@@ -215,7 +213,6 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
 
   return (
     <div className="chat-window">
-      {/* HEADER */}
       <div className="chat-header">
         <span className="chat-title">
           {selectedChat.name || "Chat"}
@@ -224,7 +221,6 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
 
       {typingUser && <div className="typing">Typing...</div>}
 
-      {/* MESSAGES */}
       <div className="message-list" ref={messageListRef}>
         {messages.map((msg) => (
           <div
@@ -255,14 +251,12 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
         ))}
       </div>
 
-      {/* SCROLL BTN */}
       {showScrollBtn && (
         <button className="scroll-to-bottom" onClick={scrollToBottom}>
           ↓
         </button>
       )}
 
-      {/* INPUT */}
       <div className="chat-input">
         <input
           type="text"
@@ -278,4 +272,3 @@ const ChatWindow = ({ selectedChat, refreshUnread }) => {
 };
 
 export default ChatWindow;
-

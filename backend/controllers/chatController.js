@@ -72,6 +72,8 @@ exports.sendMessage = async (req, res) => {
 
     await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: text,
+      updatedAt: new Date(),
+    
     });
 
     const senderUser = await User.findById(sender);
