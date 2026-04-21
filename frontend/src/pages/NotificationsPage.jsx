@@ -6,7 +6,7 @@ function NotificationsPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/notifications", {
+    fetch("https://ngoconnect-backend-xnyv.onrender.com/api/notifications", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -16,7 +16,7 @@ function NotificationsPage() {
   }, []);
 
   const markAsRead = async (id) => {
-    await fetch(`http://localhost:5000/api/notifications/${id}`, {
+    await fetch(`https://ngoconnect-backend-xnyv.onrender.com/api/notifications/${id}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,

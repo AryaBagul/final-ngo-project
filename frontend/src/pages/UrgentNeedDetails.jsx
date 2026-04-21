@@ -6,7 +6,7 @@ function UrgentNeedDetails() {
   const [need, setNeed] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/urgent/${id}`)
+    fetch(`https://ngoconnect-backend-xnyv.onrender.com/api/urgent/${id}`)
       .then(res => res.json())
       .then(data => setNeed(data))
       .catch(err => console.error(err));

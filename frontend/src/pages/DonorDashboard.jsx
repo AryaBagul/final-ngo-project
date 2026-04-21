@@ -196,7 +196,7 @@ useEffect(() => {
   ];
 const fetchNotifications = async () => {
   try {
-    const res = await fetch("http://localhost:5000/api/notifications", {
+    const res = await fetch("https://ngoconnect-backend-xnyv.onrender.com/api/notifications", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
@@ -210,7 +210,7 @@ const fetchNotifications = async () => {
 };
 const markAsRead = async (id) => {
   try {
-    await fetch(`http://localhost:5000/api/notifications/${id}`, {
+    await fetch(`https://ngoconnect-backend-xnyv.onrender.com/api/notifications/${id}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
